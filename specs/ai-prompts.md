@@ -75,6 +75,35 @@ Required by MSA 2026 Phase 2 assessment.
 
 ---
 
+## Session 3 — 2026-06-26 — Backend Core Implementation (Issues #1, #2, #3)
+
+**Tool:** Claude Code (claude-sonnet-4-6)
+
+### Prompt 1 — Full backend implementation
+> Full step-by-step instructions to build the complete backend covering issues #1, #2, #3: data layer (entities, DbContext, migrations, seeds), auth (Register, Login, JWT, BCrypt, rate limiting), and Seasons & Applications CRUD with activity logging and milestone checking.
+
+**Generated / decided:**
+- 7 model entities: User, Season, Application, ApplicationStage, Milestone, UserMilestone, DailyActivity
+- 4 DTO files: AuthDtos, SeasonDtos, ApplicationDtos, DashboardDtos
+- AppDbContext with composite keys for UserMilestone and DailyActivity; 11 hardcoded milestone seeds
+- Custom exceptions (NotFoundException, BadRequestException, UnauthorizedException) + ExceptionMiddleware
+- 6 services: AuthService, DashboardService, MilestoneService, SeasonService, ApplicationService, InsightService
+- 5 controllers: AuthController, SeasonsController, ApplicationsController, DashboardController, AdminController
+- Program.cs: JWT auth, fallback auth policy (all routes require auth by default), fixed-window rate limiter on auth endpoints, CORS, auto-migrate on startup
+- EF Core migration: InitialCreate
+- 9 unit tests across DashboardServiceTests (5) and AuthServiceTests (4); all passing
+
+**Key design choices:**
+- Fallback auth policy in Program.cs means all endpoints require authentication unless decorated with `[AllowAnonymous]`
+- `LogActivity` is private to ApplicationService; called on every user-initiated write before SaveChanges
+- `CheckAndUnlockMilestones` called after every SaveChanges in ApplicationService (create, status patch, add stage, update stage)
+- DashboardService.CalculateCurrentStreak uses synchronous EF queries (called from MilestoneService which is already async context)
+- `db.Database.Migrate()` runs at startup to auto-apply migrations including seed data
+- Rate limiter uses `QueueLimit = 0` so requests over the limit are rejected immediately (no queuing)
+- `ApplicationsController` uses per-route `[HttpGet/Post/...]` attributes without a class-level `[Route]` to keep nested + flat routes clean
+
+---
+
 ## How to Add Entries
 
 Each Claude Code session, append a new `## Session N` block with:
