@@ -113,3 +113,32 @@ Each Claude Code session, append a new `## Session N` block with:
 - Any issues or deviations from the plan
 
 This file is submitted as evidence of AI-assisted development.
+
+---
+
+## Session 3 — 2026-06-26 — Frontend Foundation (Issue #6)
+
+**Tool:** Claude Code (claude-sonnet-4-6)
+
+**Prompts:**
+- Build the complete frontend foundation for Issue #6: install all required packages, configure Tailwind CSS, create TypeScript interfaces, API client files, Zustand stores, React Router setup, auth pages, NavBar, ThemeToggle, and stub pages for all routes.
+
+**Generated / decided:**
+- Installed: react-router-dom 7.18.0, zustand 5.0.14, axios 1.18.1, recharts 3.9.0, lucide-react 1.21.0, tailwindcss 3.4.19, postcss, autoprefixer, vitest 4.1.9, @testing-library/react 16.3.2, @testing-library/user-event 14.6.1, jsdom 29.1.1
+- Created `frontend/tailwind.config.ts` (darkMode: 'class'), `frontend/postcss.config.js` (ES module syntax — required because package.json has "type": "module")
+- Updated `frontend/vite.config.ts` to import `defineConfig` from `vitest/config` (not `vite`) so the `test` property type-checks under `tsc -b`
+- Created `src/types/index.ts` with all interfaces: User, Season, Application, ApplicationStatus, ApplicationStage, Milestone, MilestoneStatus, Insight, FunnelStage, DashboardData
+- Created `src/api/` — client.ts (axios + auth interceptor), auth.ts, seasons.ts, applications.ts, dashboard.ts
+- Created `src/store/` — authStore.ts (persist middleware), seasonStore.ts, applicationStore.ts
+- Created `src/components/ThemeToggle.tsx`, `src/components/NavBar.tsx`
+- Created auth pages: LoginPage.tsx, RegisterPage.tsx
+- Created stub pages: DashboardPage.tsx, ApplicationBoardPage.tsx, ApplicationDetailPage.tsx, SeasonHistoryPage.tsx, NewSeasonPage.tsx
+- Updated App.tsx with BrowserRouter + ProtectedRoute + all routes
+- Deleted App.css (replaced by Tailwind)
+- Committed to branch `feat/frontend-foundation`; build verified: `tsc -b && vite build` passes cleanly (295 kB JS bundle, 8.6 kB CSS)
+
+**Key design choices:**
+- Used `import type { FormEvent } from 'react'` and `import type { ReactNode } from 'react'` instead of `React.FormEvent` / `React.ReactNode` because tsconfig.app.json has `"types": ["vite/client"]` only — React namespace is not globally available
+- `applicationStore.filters.status` typed as `ApplicationStatus` (not `string`) to satisfy `getApplications` parameter type; was caught by `tsc -b`
+- Skipped `npx tailwindcss init -p` to avoid pulling tailwind v4 via npx and avoid duplicate config files; wrote `postcss.config.js` manually
+- Omitted `@types/react-router-dom` from install — react-router-dom v7 bundles its own types; @types/react-router-dom is a deprecated v5 stub that would conflict
