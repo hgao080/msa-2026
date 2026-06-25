@@ -53,6 +53,28 @@ Required by MSA 2026 Phase 2 assessment.
 
 ---
 
+## Session 2 — 2026-06-25 — PRD / Issue Creation
+
+**Tool:** Claude Code (claude-sonnet-4-6)
+
+### Prompt 1 — Cross-reference specs and create GitHub issues
+> "The project has been recently scaffolded. Cross-reference HANDOFF.md and project-plan.md to ensure you understand the project scope. Ask about anything uncertain. After doing so begin splitting work out into PRDs / issues using the associated project kanban board on Github."
+
+**Output:** Cross-referenced HANDOFF.md vs project-plan.md. Surfaced discrepancies (repo structure, React version, applicationStore gap, bestWeekApplications unspecified). Created 12 GitHub issues on Roster Project Board (project #3).
+
+### Prompt 2 — Clarifications
+> "I have refreshed gh token. Holding all should be fine for now. No objections to treating 19 as canonical. Let's go with domains."
+
+**Output:** Confirmed choices, proceeded to create issues.
+
+**Key decisions:**
+- React 19 canonical (scaffold has 19.2.7; HANDOFF said 18)
+- applicationStore holds all apps for active season in memory (no pagination for MVP)
+- Issues grouped by domain (12 issues): Backend Data, Auth, Seasons/Apps, Dashboard+Insights, Admin+Tests, Frontend Foundation, Auth+Routing, Core Pages, Dashboard Page, Tests+Polish, DevOps, Submission
+- Priority: P0 = Data Layer, Auth, Seasons/Apps, Frontend Foundation, Auth+Routing; P1 = Dashboard+Insights, Admin+Tests, Core Pages, Dashboard Page; P2 = Tests+Polish, DevOps, Submission
+
+---
+
 ## How to Add Entries
 
 Each Claude Code session, append a new `## Session N` block with:
