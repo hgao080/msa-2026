@@ -1,0 +1,24 @@
+# JetBrains IDE
+.idea/
+
+# .NET build artifacts
+**/bin/
+**/obj/
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# .NET local overrides
+*.user
+appsettings.local.json
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
