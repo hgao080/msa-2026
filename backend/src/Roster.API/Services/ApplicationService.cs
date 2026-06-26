@@ -6,32 +6,23 @@ using Roster.API.Models;
 
 namespace Roster.API.Services;
 
-public class ApplicationService
+public class ApplicationService(AppDbContext db, MilestoneService milestoneService)
 {
-    private readonly AppDbContext _db;
-    private readonly MilestoneService _milestoneService;
-
-    public ApplicationService(AppDbContext db, MilestoneService milestoneService)
-    {
-        _db = db;
-        _milestoneService = milestoneService;
-    }
-
     private async Task LogActivity(Guid userId)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var exists = await _db.DailyActivities.AnyAsync(a => a.UserId == userId && a.Date == today);
+        var exists = await db.DailyActivities.AnyAsync(a => a.UserId == userId && a.Date == today);
         if (!exists)
-            _db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today });
+            db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today });
     }
 
-    public async Task<List<ApplicationDto>> GetApplicationsAsync(Guid seasonId, Guid userId,
-        string? status, string? source, string? sort, string? order)
+    public async Task<List<ApplicationDto>> GetApplicationsAsync(Guid seasonId, Guid userId, string? status,
+        string? source, string? sort, string? order)
     {
-        var seasonExists = await _db.Seasons.AnyAsync(s => s.Id == seasonId && s.UserId == userId);
+        var seasonExists = await db.Seasons.AnyAsync(s => s.Id == seasonId && s.UserId == userId);
         if (!seasonExists) throw new NotFoundException("Season not found");
 
-        var query = _db.Applications
+        var query = db.Applications
             .Include(a => a.Stages)
             .Where(a => a.SeasonId == seasonId && a.UserId == userId);
 
@@ -45,12 +36,12 @@ public class ApplicationService
 
         apps = (sort, order?.ToLower() == "desc") switch
         {
-            ("company", false)      => apps.OrderBy(a => a.Company).ToList(),
-            ("company", true)       => apps.OrderByDescending(a => a.Company).ToList(),
-            ("lastUpdated", false)  => apps.OrderBy(a => a.LastUpdated).ToList(),
-            ("lastUpdated", true)   => apps.OrderByDescending(a => a.LastUpdated).ToList(),
-            (_, false)              => apps.OrderBy(a => a.AppliedDate).ToList(),
-            (_, true)               => apps.OrderByDescending(a => a.AppliedDate).ToList(),
+            ("company", false) => apps.OrderBy(a => a.Company).ToList(),
+            ("company", true) => apps.OrderByDescending(a => a.Company).ToList(),
+            ("lastUpdated", false) => apps.OrderBy(a => a.LastUpdated).ToList(),
+            ("lastUpdated", true) => apps.OrderByDescending(a => a.LastUpdated).ToList(),
+            (_, false) => apps.OrderBy(a => a.AppliedDate).ToList(),
+            (_, true) => apps.OrderByDescending(a => a.AppliedDate).ToList(),
         };
 
         return apps.Select(ToDto).ToList();
@@ -58,17 +49,19 @@ public class ApplicationService
 
     public async Task<ApplicationDto> GetApplicationAsync(Guid id, Guid userId)
     {
-        var app = await _db.Applications
-            .Include(a => a.Stages)
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-            ?? throw new NotFoundException("Application not found");
+        var app = await db.Applications
+                      .Include(a => a.Stages)
+                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
+                  ?? throw new NotFoundException("Application not found");
+        
         return ToDto(app);
     }
 
-    public async Task<ApplicationDto> CreateApplicationAsync(Guid seasonId, Guid userId, CreateApplicationRequest request)
+    public async Task<ApplicationDto> CreateApplicationAsync(Guid seasonId, Guid userId,
+        CreateApplicationRequest request)
     {
-        var season = await _db.Seasons.FirstOrDefaultAsync(s => s.Id == seasonId && s.UserId == userId)
-            ?? throw new NotFoundException("Season not found");
+        var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == seasonId && s.UserId == userId)
+                     ?? throw new NotFoundException("Season not found");
 
         if (!Enum.TryParse<ApplicationSource>(request.Source, out var source))
             throw new BadRequestException("Invalid source value");
@@ -87,19 +80,20 @@ public class ApplicationService
             ReferrerName = request.ReferrerName,
             Notes = request.Notes
         };
-        _db.Applications.Add(app);
+        db.Applications.Add(app);
         await LogActivity(userId);
-        await _db.SaveChangesAsync();
-        await _milestoneService.CheckAndUnlockMilestones(userId, seasonId);
+        await db.SaveChangesAsync();
+        await milestoneService.CheckAndUnlockMilestones(userId, seasonId);
+        
         return ToDto(app);
     }
 
     public async Task<ApplicationDto> UpdateApplicationAsync(Guid id, Guid userId, UpdateApplicationRequest request)
     {
-        var app = await _db.Applications
-            .Include(a => a.Stages)
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-            ?? throw new NotFoundException("Application not found");
+        var app = await db.Applications
+                      .Include(a => a.Stages)
+                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
+                  ?? throw new NotFoundException("Application not found");
 
         if (request.Company != null) app.Company = request.Company;
         if (request.Role != null) app.Role = request.Role;
@@ -108,18 +102,18 @@ public class ApplicationService
         if (request.Source != null && Enum.TryParse<ApplicationSource>(request.Source, out var src))
             app.Source = src;
         app.LastUpdated = DateTime.UtcNow;
-
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
+        
         return ToDto(app);
     }
 
     public async Task DeleteApplicationAsync(Guid id, Guid userId)
     {
-        var app = await _db.Applications
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-            ?? throw new NotFoundException("Application not found");
-        _db.Applications.Remove(app);
-        await _db.SaveChangesAsync();
+        var app = await db.Applications
+                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
+                  ?? throw new NotFoundException("Application not found");
+        db.Applications.Remove(app);
+        await db.SaveChangesAsync();
     }
 
     public async Task<ApplicationDto> PatchStatusAsync(Guid id, Guid userId, string status)
@@ -127,16 +121,17 @@ public class ApplicationService
         if (!Enum.TryParse<ApplicationStatus>(status, out var s))
             throw new BadRequestException("Invalid status value");
 
-        var app = await _db.Applications
-            .Include(a => a.Stages)
-            .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-            ?? throw new NotFoundException("Application not found");
+        var app = await db.Applications
+                      .Include(a => a.Stages)
+                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
+                  ?? throw new NotFoundException("Application not found");
 
         app.Status = s;
         app.LastUpdated = DateTime.UtcNow;
         await LogActivity(userId);
-        await _db.SaveChangesAsync();
-        await _milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
+        await db.SaveChangesAsync();
+        await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
+        
         return ToDto(app);
     }
 
@@ -145,10 +140,10 @@ public class ApplicationService
         if (!Enum.TryParse<StageType>(request.Type, out var type))
             throw new BadRequestException("Invalid stage type");
 
-        var app = await _db.Applications
-            .Include(a => a.Stages)
-            .FirstOrDefaultAsync(a => a.Id == appId && a.UserId == userId)
-            ?? throw new NotFoundException("Application not found");
+        var app = await db.Applications
+                      .Include(a => a.Stages)
+                      .FirstOrDefaultAsync(a => a.Id == appId && a.UserId == userId)
+                  ?? throw new NotFoundException("Application not found");
 
         var stage = new ApplicationStage
         {
@@ -157,45 +152,60 @@ public class ApplicationService
             Type = type,
             ScheduledDate = request.ScheduledDate
         };
-        _db.ApplicationStages.Add(stage);
+        db.ApplicationStages.Add(stage);
         app.LastUpdated = DateTime.UtcNow;
         await LogActivity(userId);
-        await _db.SaveChangesAsync();
-        await _milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
+        await db.SaveChangesAsync();
+        await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
+        
         return ToStageDto(stage);
     }
 
-    public async Task<ApplicationStageDto> UpdateStageAsync(Guid appId, Guid userId, Guid stageId, UpdateStageRequest request)
+    public async Task<ApplicationStageDto> UpdateStageAsync(Guid appId, Guid userId, Guid stageId,
+        UpdateStageRequest request)
     {
-        var app = await _db.Applications
-            .Include(a => a.Stages)
-            .FirstOrDefaultAsync(a => a.Id == appId && a.UserId == userId)
-            ?? throw new NotFoundException("Application not found");
+        var app = await db.Applications
+                      .Include(a => a.Stages)
+                      .FirstOrDefaultAsync(a => a.Id == appId && a.UserId == userId)
+                  ?? throw new NotFoundException("Application not found");
 
         var stage = app.Stages.FirstOrDefault(s => s.Id == stageId)
-            ?? throw new NotFoundException("Stage not found");
+                    ?? throw new NotFoundException("Stage not found");
 
         if (request.Status != null && Enum.TryParse<StageStatus>(request.Status, out var st))
             stage.Status = st;
         if (request.CompletedDate.HasValue) stage.CompletedDate = request.CompletedDate;
         if (request.Notes != null) stage.Notes = request.Notes;
-
         app.LastUpdated = DateTime.UtcNow;
         await LogActivity(userId);
-        await _db.SaveChangesAsync();
-        await _milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
+        await db.SaveChangesAsync();
+        await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
+        
         return ToStageDto(stage);
     }
 
     private static ApplicationDto ToDto(Application a) => new(
-        a.Id, a.SeasonId, a.Company, a.Role, a.JobPostingUrl,
-        a.Source.ToString(), a.Status.ToString(), a.AppliedDate, a.LastUpdated,
-        a.ReferrerName, a.Notes,
+        a.Id,
+        a.SeasonId,
+        a.Company,
+        a.Role,
+        a.JobPostingUrl,
+        a.Source.ToString(),
+        a.Status.ToString(),
+        a.AppliedDate,
+        a.LastUpdated,
+        a.ReferrerName,
+        a.Notes,
         a.Stages.Select(ToStageDto).ToList()
     );
 
     private static ApplicationStageDto ToStageDto(ApplicationStage s) => new(
-        s.Id, s.ApplicationId, s.Type.ToString(), s.Status.ToString(),
-        s.ScheduledDate, s.CompletedDate, s.Notes
+        s.Id,
+        s.ApplicationId,
+        s.Type.ToString(),
+        s.Status.ToString(),
+        s.ScheduledDate,
+        s.CompletedDate,
+        s.Notes
     );
 }

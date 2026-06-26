@@ -1,16 +1,7 @@
 namespace Roster.API.Exceptions;
 
-public class NotFoundException : Exception
-{
-    public NotFoundException(string message) : base(message) { }
-}
+public class NotFoundException(string message) : Exception(message);
 
-public class BadRequestException : Exception
-{
-    public BadRequestException(string message) : base(message) { }
-}
+public class BadRequestException(string message) : Exception(message);
 
-public class UnauthorizedException : Exception
-{
-    public UnauthorizedException(string message) : base(message) { }
-}
+public class UnauthorizedException(string message) : Exception(message);

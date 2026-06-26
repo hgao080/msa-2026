@@ -87,11 +87,11 @@ public class InsightService(AppDbContext db)
             var dayOfWeek = (int)today.DayOfWeek;
             if (dayOfWeek is not (3 or 4)) return insights.OrderBy(i => i.Priority).ToList();
             if (thisWeekCount < season.WeeklyTarget * 0.3)
-                insights.Add(new("weekly-behind",
+                insights.Add(new InsightDto("weekly-behind",
                     $"Only {thisWeekCount}/{season.WeeklyTarget} applications this week. You've still got time to catch up.",
                     6));
             else if (thisWeekCount >= season.WeeklyTarget)
-                insights.Add(new("weekly-target-hit",
+                insights.Add(new InsightDto("weekly-target-hit",
                     $"You've hit your weekly target of {season.WeeklyTarget}. Nice work.",
                     6));
         }

@@ -7,6 +7,7 @@ public static class ApplicationStats
     public static double ResponseRate(IList<Application> apps)
     {
         if (apps.Count == 0) return 0;
+        
         var responded = apps.Count(a =>
             a.Status != ApplicationStatus.Applied &&
             a.Status != ApplicationStatus.Withdrawn);
@@ -20,7 +21,7 @@ public static class ApplicationStats
 
         if (sorted.Count == 0 || sorted[0].Date < today.AddDays(-1)) return 0;
 
-        int streak = 0;
+        var streak = 0;
         var expected = today;
         foreach (var a in sorted)
         {
@@ -31,6 +32,7 @@ public static class ApplicationStats
             }
             else break;
         }
+        
         return streak;
     }
 
@@ -40,11 +42,12 @@ public static class ApplicationStats
         if (dates.Count == 0) return 0;
 
         int longest = 1, current = 1;
-        for (int i = 1; i < dates.Count; i++)
+        for (var i = 1; i < dates.Count; i++)
         {
             current = dates[i] == dates[i - 1].AddDays(1) ? current + 1 : 1;
             longest = Math.Max(longest, current);
         }
+        
         return longest;
     }
 }

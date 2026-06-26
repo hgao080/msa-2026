@@ -15,6 +15,7 @@ public class SeasonService(AppDbContext db)
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.StartDate)
             .ToListAsync();
+        
         return seasons.Select(DashboardService.ToSeasonDto).ToList();
     }
 
@@ -23,6 +24,7 @@ public class SeasonService(AppDbContext db)
         var season = await db.Seasons
             .FirstOrDefaultAsync(s => s.Id == seasonId && s.UserId == userId)
             ?? throw new NotFoundException("Season not found");
+        
         return DashboardService.ToSeasonDto(season);
     }
 
@@ -39,6 +41,7 @@ public class SeasonService(AppDbContext db)
         };
         db.Seasons.Add(season);
         await db.SaveChangesAsync();
+        
         return DashboardService.ToSeasonDto(season);
     }
 
@@ -51,8 +54,8 @@ public class SeasonService(AppDbContext db)
         if (request.Name != null) season.Name = request.Name;
         if (request.Goal != null) season.Goal = request.Goal;
         if (request.WeeklyTarget.HasValue) season.WeeklyTarget = request.WeeklyTarget.Value;
-
         await db.SaveChangesAsync();
+        
         return DashboardService.ToSeasonDto(season);
     }
 
@@ -79,8 +82,8 @@ public class SeasonService(AppDbContext db)
         season.FinalInterviewCount = apps.SelectMany(a => a.Stages).Count();
         season.FinalOfferCount = apps.Count(a => a.Status == ApplicationStatus.Offer);
         season.FinalStreakDays = ApplicationStats.LongestStreak(activities);
-
         await db.SaveChangesAsync();
+        
         return DashboardService.ToSeasonDto(season);
     }
 }

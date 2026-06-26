@@ -33,13 +33,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"))
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
-        .Build();
-});
+        .Build());
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -77,8 +75,8 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapOpenApi();
-app.MapScalarApiReference(opts => opts.Title = "Roster API");
+app.MapOpenApi().AllowAnonymous();
+app.MapScalarApiReference(opts => opts.Title = "Roster API").AllowAnonymous();
 
 using (var scope = app.Services.CreateScope())
 {

@@ -9,23 +9,20 @@ namespace Roster.API.Controllers;
 [ApiController]
 [Route("api/admin")]
 [Authorize(Policy = "AdminOnly")]
-public class AdminController : ControllerBase
+public class AdminController(AppDbContext db) : ControllerBase
 {
-    private readonly AppDbContext _db;
-
-    public AdminController(AppDbContext db)
-    {
-        _db = db;
-    }
-
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats()
     {
-        var totalUsers = await _db.Users.CountAsync();
-        var totalSeasons = await _db.Seasons.CountAsync();
-        var totalApplications = await _db.Applications.CountAsync();
+        var totalUsers = await db.Users.CountAsync();
+        var totalSeasons = await db.Seasons.CountAsync();
+        var totalApplications = await db.Applications.CountAsync();
         var avgApps = totalSeasons > 0 ? (double)totalApplications / totalSeasons : 0;
 
-        return Ok(new AdminStatsDto(totalUsers, totalSeasons, totalApplications, avgApps));
+        return Ok(new AdminStatsDto(
+            totalUsers,
+            totalSeasons,
+            totalApplications,
+            avgApps));
     }
 }
