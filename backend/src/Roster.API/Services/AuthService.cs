@@ -10,20 +10,11 @@ using Roster.API.Models;
 
 namespace Roster.API.Services;
 
-public class AuthService
+public class AuthService(AppDbContext db, IConfiguration config)
 {
-    private readonly AppDbContext _db;
-    private readonly IConfiguration _config;
-
-    public AuthService(AppDbContext db, IConfiguration config)
-    {
-        _db = db;
-        _config = config;
-    }
-
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
-        if (await _db.Users.AnyAsync(u => u.Email == request.Email))
+        if (await db.Users.AnyAsync(u => u.Email == request.Email))
             throw new BadRequestException("Email already registered");
 
         var user = new User
@@ -34,14 +25,15 @@ public class AuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12),
             CreatedAt = DateTime.UtcNow
         };
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+        
         return new AuthResponse(GenerateToken(user), ToDto(user));
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email)
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email)
             ?? throw new UnauthorizedException("Invalid credentials");
 
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
@@ -52,20 +44,21 @@ public class AuthService
 
     public async Task<AuthResponse> RefreshAsync(Guid userId)
     {
-        var user = await _db.Users.FindAsync(userId)
+        var user = await db.Users.FindAsync(userId)
             ?? throw new NotFoundException("User not found");
+        
         return new AuthResponse(GenerateToken(user), ToDto(user));
     }
 
     private string GenerateToken(User user)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var expiry = int.Parse(_config["Jwt:ExpiryMinutes"] ?? "1440");
+        var expiry = int.Parse(config["Jwt:ExpiryMinutes"] ?? "1440");
 
         var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
+            issuer: config["Jwt:Issuer"],
+            audience: config["Jwt:Audience"],
             claims: [
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),

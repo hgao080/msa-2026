@@ -1,80 +1,90 @@
-using Microsoft.EntityFrameworkCore;
-using Roster.API.Data;
+using Roster.API.Helpers;
 using Roster.API.Models;
 using Roster.API.Services;
 
 namespace Roster.Tests.Services;
 
-public class DashboardServiceTests
+public class ApplicationStatsTests
 {
-    private AppDbContext CreateDb()
+    private static List<DailyActivity> Activities(Guid userId, params int[] daysAgo)
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
-        return new AppDbContext(options);
-    }
-
-    [Fact]
-    public void CalculateCurrentStreak_NoActivity_ReturnsZero()
-    {
-        using var db = CreateDb();
-        var service = new DashboardService(db);
-        Assert.Equal(0, service.CalculateCurrentStreak(Guid.NewGuid()));
-    }
-
-    [Fact]
-    public void CalculateCurrentStreak_ActivityToday_ReturnsOne()
-    {
-        using var db = CreateDb();
-        var userId = Guid.NewGuid();
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today });
-        db.SaveChanges();
-
-        var service = new DashboardService(db);
-        Assert.Equal(1, service.CalculateCurrentStreak(userId));
+        return daysAgo.Select(d => new DailyActivity { UserId = userId, Date = today.AddDays(-d) }).ToList();
     }
 
     [Fact]
-    public void CalculateCurrentStreak_ConsecutiveDays_ReturnsCorrectCount()
+    public void CurrentStreak_NoActivity_ReturnsZero()
     {
-        using var db = CreateDb();
-        var userId = Guid.NewGuid();
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        for (int i = 0; i < 5; i++)
-            db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today.AddDays(-i) });
-        db.SaveChanges();
-
-        var service = new DashboardService(db);
-        Assert.Equal(5, service.CalculateCurrentStreak(userId));
+        Assert.Equal(0, ApplicationStats.CurrentStreak([]));
     }
 
     [Fact]
-    public void CalculateLongestStreak_WithGap_ReturnsLongest()
+    public void CurrentStreak_ActivityToday_ReturnsOne()
     {
-        using var db = CreateDb();
-        var userId = Guid.NewGuid();
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        // 3 consecutive, then gap, then 2
-        db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today.AddDays(-10) });
-        db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today.AddDays(-9) });
-        db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today.AddDays(-8) });
-        db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today.AddDays(-3) });
-        db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today.AddDays(-2) });
-        db.SaveChanges();
+        var activities = Activities(Guid.NewGuid(), 0);
+        Assert.Equal(1, ApplicationStats.CurrentStreak(activities));
+    }
 
-        var service = new DashboardService(db);
-        Assert.Equal(3, service.CalculateLongestStreak(userId));
+    [Fact]
+    public void CurrentStreak_FiveConsecutiveDays_ReturnsFive()
+    {
+        var activities = Activities(Guid.NewGuid(), 0, 1, 2, 3, 4);
+        Assert.Equal(5, ApplicationStats.CurrentStreak(activities));
+    }
+
+    [Fact]
+    public void CurrentStreak_GapBeforeToday_ReturnsZero()
+    {
+        var activities = Activities(Guid.NewGuid(), 3, 4, 5);
+        Assert.Equal(0, ApplicationStats.CurrentStreak(activities));
+    }
+
+    [Fact]
+    public void LongestStreak_WithGap_ReturnsLongestSegment()
+    {
+        var activities = Activities(Guid.NewGuid(), 10, 9, 8, 3, 2);
+        Assert.Equal(3, ApplicationStats.LongestStreak(activities));
+    }
+
+    [Fact]
+    public void LongestStreak_NoActivity_ReturnsZero()
+    {
+        Assert.Equal(0, ApplicationStats.LongestStreak([]));
     }
 
     [Fact]
     public void CalculateFunnel_NoApplications_ReturnsZeroCounts()
     {
-        using var db = CreateDb();
-        var service = new DashboardService(db);
-        var funnel = service.CalculateFunnel([]);
+        var funnel = DashboardService.CalculateFunnel([]);
         Assert.Equal(5, funnel.Count);
         Assert.All(funnel, f => Assert.Equal(0, f.Count));
+    }
+
+    [Fact]
+    public void ResponseRate_NoApps_ReturnsZero()
+    {
+        Assert.Equal(0, ApplicationStats.ResponseRate([]));
+    }
+
+    [Fact]
+    public void ResponseRate_AllApplied_ReturnsZero()
+    {
+        var apps = new List<Application>
+        {
+            new() { Status = ApplicationStatus.Applied },
+            new() { Status = ApplicationStatus.Applied },
+        };
+        Assert.Equal(0, ApplicationStats.ResponseRate(apps));
+    }
+
+    [Fact]
+    public void ResponseRate_HalfResponded_ReturnsHalf()
+    {
+        var apps = new List<Application>
+        {
+            new() { Status = ApplicationStatus.Applied },
+            new() { Status = ApplicationStatus.Screening },
+        };
+        Assert.Equal(0.5, ApplicationStats.ResponseRate(apps));
     }
 }

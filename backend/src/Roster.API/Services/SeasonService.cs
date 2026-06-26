@@ -2,24 +2,16 @@ using Microsoft.EntityFrameworkCore;
 using Roster.API.Data;
 using Roster.API.DTOs;
 using Roster.API.Exceptions;
+using Roster.API.Helpers;
 using Roster.API.Models;
 
 namespace Roster.API.Services;
 
-public class SeasonService
+public class SeasonService(AppDbContext db)
 {
-    private readonly AppDbContext _db;
-    private readonly DashboardService _dashboardService;
-
-    public SeasonService(AppDbContext db, DashboardService dashboardService)
-    {
-        _db = db;
-        _dashboardService = dashboardService;
-    }
-
     public async Task<List<SeasonDto>> GetSeasonsAsync(Guid userId)
     {
-        var seasons = await _db.Seasons
+        var seasons = await db.Seasons
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.StartDate)
             .ToListAsync();
@@ -28,7 +20,7 @@ public class SeasonService
 
     public async Task<SeasonDto> GetSeasonAsync(Guid seasonId, Guid userId)
     {
-        var season = await _db.Seasons
+        var season = await db.Seasons
             .FirstOrDefaultAsync(s => s.Id == seasonId && s.UserId == userId)
             ?? throw new NotFoundException("Season not found");
         return DashboardService.ToSeasonDto(season);
@@ -45,14 +37,14 @@ public class SeasonService
             WeeklyTarget = request.WeeklyTarget,
             StartDate = DateTime.UtcNow
         };
-        _db.Seasons.Add(season);
-        await _db.SaveChangesAsync();
+        db.Seasons.Add(season);
+        await db.SaveChangesAsync();
         return DashboardService.ToSeasonDto(season);
     }
 
     public async Task<SeasonDto> UpdateSeasonAsync(Guid seasonId, Guid userId, UpdateSeasonRequest request)
     {
-        var season = await _db.Seasons
+        var season = await db.Seasons
             .FirstOrDefaultAsync(s => s.Id == seasonId && s.UserId == userId)
             ?? throw new NotFoundException("Season not found");
 
@@ -60,13 +52,13 @@ public class SeasonService
         if (request.Goal != null) season.Goal = request.Goal;
         if (request.WeeklyTarget.HasValue) season.WeeklyTarget = request.WeeklyTarget.Value;
 
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
         return DashboardService.ToSeasonDto(season);
     }
 
     public async Task<SeasonDto> CloseSeasonAsync(Guid seasonId, Guid userId, string? outcome)
     {
-        var season = await _db.Seasons
+        var season = await db.Seasons
             .Include(s => s.Applications).ThenInclude(a => a.Stages)
             .FirstOrDefaultAsync(s => s.Id == seasonId && s.UserId == userId)
             ?? throw new NotFoundException("Season not found");
@@ -75,18 +67,20 @@ public class SeasonService
             throw new BadRequestException("Season is already archived");
 
         var apps = season.Applications.ToList();
-        int responded = apps.Count(a => a.Status != ApplicationStatus.Applied && a.Status != ApplicationStatus.Withdrawn);
+        var activities = await db.DailyActivities
+            .Where(a => a.UserId == userId)
+            .ToListAsync();
 
         season.Status = SeasonStatus.Archived;
         season.EndDate = DateTime.UtcNow;
         season.Outcome = outcome;
         season.FinalApplicationCount = apps.Count;
-        season.FinalResponseRate = apps.Count > 0 ? (double)responded / apps.Count : 0;
+        season.FinalResponseRate = ApplicationStats.ResponseRate(apps);
         season.FinalInterviewCount = apps.SelectMany(a => a.Stages).Count();
         season.FinalOfferCount = apps.Count(a => a.Status == ApplicationStatus.Offer);
-        season.FinalStreakDays = _dashboardService.CalculateLongestStreak(userId);
+        season.FinalStreakDays = ApplicationStats.LongestStreak(activities);
 
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
         return DashboardService.ToSeasonDto(season);
     }
 }

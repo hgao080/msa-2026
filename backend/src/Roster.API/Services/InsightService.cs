@@ -1,35 +1,30 @@
 using Microsoft.EntityFrameworkCore;
 using Roster.API.Data;
 using Roster.API.DTOs;
+using Roster.API.Helpers;
 using Roster.API.Models;
 
 namespace Roster.API.Services;
 
-public class InsightService
+public class InsightService(AppDbContext db)
 {
-    private readonly AppDbContext _db;
-    private readonly DashboardService _dashboardService;
-
-    public InsightService(AppDbContext db, DashboardService dashboardService)
-    {
-        _db = db;
-        _dashboardService = dashboardService;
-    }
-
     public async Task<List<InsightDto>> GetInsightsAsync(Guid userId, Guid seasonId)
     {
-        var apps = await _db.Applications
+        var apps = await db.Applications
             .Include(a => a.Stages)
             .Where(a => a.SeasonId == seasonId && a.UserId == userId)
+            .ToListAsync();
+
+        var activities = await db.DailyActivities
+            .Where(a => a.UserId == userId)
             .ToListAsync();
 
         var today = DateTime.UtcNow;
         var thisWeekStart = today.AddDays(-(int)today.DayOfWeek);
         var insights = new List<InsightDto>();
 
-        var streak = _dashboardService.CalculateCurrentStreak(userId);
-        var activeToday = await _db.DailyActivities.AnyAsync(a =>
-            a.UserId == userId && a.Date == DateOnly.FromDateTime(today));
+        var streak = ApplicationStats.CurrentStreak(activities);
+        var activeToday = activities.Any(a => a.Date == DateOnly.FromDateTime(today));
 
         if (streak > 3 && !activeToday)
             insights.Add(new("streak-at-risk",
@@ -79,7 +74,7 @@ public class InsightService
                 $"{stale} application{(stale > 1 ? "s are" : " is")} past 14 days with no response. Worth chasing up.",
                 5));
 
-        var season = await _db.Seasons.FindAsync(seasonId);
+        var season = await db.Seasons.FindAsync(seasonId);
         if (season != null)
         {
             var thisWeekCount = apps.Count(a => a.AppliedDate >= thisWeekStart);
