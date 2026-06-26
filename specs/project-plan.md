@@ -21,6 +21,44 @@ Points and levels require arbitrary scoring rubrics. Insights are derived direct
 ### SQLite over PostgreSQL
 Simplifies Railway/Render deployment (no managed DB service required), sufficient for single-user data volumes, and EF Core handles it identically.
 
+**Update (2026-06-26):** Issue #15 raised to switch from SQLite to Azure SQL Database for production. SQLite file-based storage is unsuitable for hosted deployments where the filesystem is ephemeral (Railway, Azure App Service). Azure SQL gives persistent managed storage with EF Core support identical to SQLite — only the provider package and connection string change.
+
+### JWT over session-based authentication
+
+This is a React SPA talking to a separate ASP.NET Core API (different origin). Two options:
+
+**Session-based:** Server stores a session record in DB. Every request looks it up by session ID cookie. Straightforward for monoliths where server and browser share the same origin — cookie `SameSite` and CSRF handling work naturally. Requires a shared session store (Redis or DB table) to survive server restarts.
+
+**JWT (chosen):** Server signs a token on login. Client stores it and sends it as `Authorization: Bearer <token>` on every request. Server validates the signature mathematically — no DB lookup per request, no session storage. Role claim (`ClaimTypes.Role`) is embedded in the token itself, so `[Authorize(Policy = "AdminOnly")]` never touches the database.
+
+JWT fits this architecture because:
+- `Authorization: Bearer` headers work cleanly across origins without CORS cookie complexity
+- No additional infrastructure (Redis, session table) needed alongside SQLite/Azure SQL
+- RBAC check is free — middleware reads the role claim, no DB round trip
+
+**Tradeoff:** Token revocation is impossible without a denylist (which reintroduces statefulness). Logout discards the client-side token but the token remains cryptographically valid until expiry (24 hours). Acceptable for Roster — no financial data, and the attack surface for stolen tokens is low. For banking or healthcare this would require short-lived tokens with refresh token rotation or a server-side denylist.
+
+### BCrypt over ASP.NET Core Identity
+
+Production .NET apps typically use ASP.NET Core Identity (PBKDF2 hashing, `UserManager`/`SignInManager`, email confirmation, lockout) or delegate auth entirely to an external provider (Azure AD B2C, Auth0, Entra ID).
+
+BCrypt chosen here for three reasons:
+1. **MSA visibility** — the assessment requires demonstrating security measures. Raw BCrypt makes the mechanism explicit and auditable; Identity abstracts it away.
+2. **Reduced boilerplate** — Identity requires replacing `User` with `IdentityUser`, six extra migration tables, `AddIdentity<>()` setup. Disproportionate for a solo assessment project.
+3. **No external IdP cost** — Auth0/Azure AD B2C have free tier limits; BCrypt + JWT needs zero additional infrastructure.
+
+`workFactor: 12` chosen over the library default of 11: work factor is exponential (2¹² = 4096 rounds ≈ 250ms on modern hardware). OWASP recommends targeting ~250ms as the floor for new systems in 2024+. Factor 11 ≈ 130ms, which is fast enough to make offline brute force marginally cheaper. Factor 13 (500ms) introduces noticeable UX lag on login.
+
+### DailyActivity table for heatmap/streaks
+`DailyActivity` stores one row per user per active day (composite PK: `UserId + Date`, ~20 bytes/row). This powers both the streak calculation and the dashboard activity heatmap.
+
+Alternatives considered:
+- **Bitfield on User** — compact but bit manipulation is complex and querying specific date ranges is hard
+- **Count column on Season** — tiny storage but loses *which* days were active; heatmap requires per-day granularity
+- **Aggregate/cache table** — fast reads but requires cache invalidation on every write
+
+The table approach is correct at MSA scale (1000 users × 365 days = ~7 MB/year). At millions of users this would move to Redis or a time-series store. Inserts are idempotent — `LogActivity` checks `AnyAsync` before inserting, so double-writes are safe.
+
 ### Stats cached on season close
 Dashboard recomputes live for the active season. On close, final stats (application count, response rate, interview count, offer count, streak) are written to the Season row. This keeps the history page instant with no recomputation.
 
