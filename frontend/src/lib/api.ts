@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 
-const BASE = process.env.ROSTER_API_URL ?? 'http://localhost:5210'
+export const BASE = process.env.ROSTER_API_URL ?? 'http://localhost:5210'
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
