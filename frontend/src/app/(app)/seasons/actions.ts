@@ -1,8 +1,23 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createSeason } from '@/lib/seasons'
+import { revalidatePath } from 'next/cache'
+import { createSeason, closeSeason } from '@/lib/seasons'
 import type { ActionState } from '@/app/(auth)/actions'
+
+export async function closeSeasonAction(
+  id: string,
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    await closeSeason(id, String(formData.get('outcome') ?? '') || undefined)
+  } catch {
+    return { error: 'Failed to close season' }
+  }
+  revalidatePath('/seasons')
+  redirect('/seasons')
+}
 
 export async function createSeasonAction(
   _prev: ActionState,
