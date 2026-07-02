@@ -16,34 +16,47 @@ export function NavBar({ username }: { username?: string }) {
   const pathname = usePathname()
 
   return (
-    <nav className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-6">
-        <Link href="/dashboard" className="font-bold text-lg text-indigo-600 dark:text-indigo-400">
-          Roster
+    <nav className="border-b border-line bg-surface">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
+        <Link
+          href="/dashboard"
+          className="font-display text-xl font-bold tracking-tight text-accent"
+          style={{ transform: 'skewX(-8deg)' }}
+        >
+          HORME
         </Link>
-        <div className="flex items-center gap-1 flex-1">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <Link
-              key={to}
-              href={to}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                pathname === to
-                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-              }`}
-            >
-              <Icon size={15} />
-              {label}
-            </Link>
-          ))}
+        <div className="flex flex-1 items-center gap-1">
+          {navItems.map(({ to, label, icon: Icon }) => {
+            const active = pathname === to
+            return (
+              <Link
+                key={to}
+                href={to}
+                aria-current={active ? 'page' : undefined}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-accent-soft text-accent'
+                    : 'text-fg-2 hover:bg-surface-2 hover:text-fg'
+                }`}
+              >
+                {active && (
+                  <span className="-mr-0.5 text-accent" style={{ transform: 'skewX(-12deg)' }} aria-hidden>
+                    ´
+                  </span>
+                )}
+                <Icon size={15} />
+                {label}
+              </Link>
+            )
+          })}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500 dark:text-gray-400">{username}</span>
+          <span className="text-sm text-fg-3">{username}</span>
           <ThemeToggle />
           <form action={logout}>
             <button
               type="submit"
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400"
+              className="rounded-md p-2 text-fg-3 hover:bg-surface-2 hover:text-fg"
               aria-label="Logout"
             >
               <LogOut size={16} />

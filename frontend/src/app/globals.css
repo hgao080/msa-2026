@@ -2,21 +2,67 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ── Horme design tokens ─────────────────────────────────────────
+   Identity: kinetic / momentum. Accent = violet. See specs/design-system.md */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f1f2f4;
+  --surface: #ffffff;
+  --surface-2: #f7f8fa;
+  --fg: #14161a;
+  --fg-2: #5c626d;
+  --fg-3: #9aa0aa;
+  --line: #e5e7ec;
+  --accent: #7c6bff;
+  --accent-deep: #5b4ae0;
+  --win: #16a34a;
+  --lose: #dc2626;
+  --neu: #94a3b8;
+
+  /* status ramp — analogous violet arc; hues shared across themes */
+  --st-applied: #6d8bff;
+  --st-oa: #6b6bf5;
+  --st-screening: #8b5cf6;
+  --st-technical: #b455e6;
+  --st-final: #d94fa6;
+  --st-offer: var(--win);
+  --st-rejected: var(--lose);
+  --st-withdrawn: var(--neu);
+
+  --accent-soft: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  --row-hi: color-mix(in srgb, var(--accent) 9%, var(--surface));
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --bg: #0b0c0e;
+  --surface: #121317;
+  --surface-2: #0e0f12;
+  --fg: #edece8;
+  --fg-2: #8b8f97;
+  --fg-3: #565a63;
+  --line: #1d1f24;
+  --accent: #7c6bff;
+  --accent-deep: #5b4ae0;
+  --win: #22c55e;
+  --lose: #ef4444;
+  --neu: #6b7280;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-soft: var(--accent-soft);
+  --color-win: var(--win);
+  --color-lose: var(--lose);
+  --color-neu: var(--neu);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
 * {
@@ -24,6 +70,26 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+/* orchestrated load: content eases in from the left, accelerating (the impulse) */
+@keyframes horme-launch {
+  from { opacity: 0; transform: translateX(-14px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-launch {
+  opacity: 0;
+  animation: horme-launch 0.6s cubic-bezier(0.16, 0.9, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .animate-launch { opacity: 1; transform: none; }
 }
