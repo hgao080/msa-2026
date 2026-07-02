@@ -4,10 +4,15 @@
 
 - **Framework:** Next.js App Router (replaces Vite + React Router v7).
 - **Data layer:** Next-native — server components fetch server-side; `fetch` replaces Axios.
-- **Auth:** JWT stays issued by the .NET backend (BCrypt + EF users = source of truth). Next stores the JWT in an **httpOnly cookie** set by a Next **route handler**. `middleware.ts` guards routes; server components read the cookie and forward `Authorization: Bearer <jwt>` to the backend.
+- **Auth:** JWT stays issued by the .NET backend (BCrypt + EF users = source of truth). Next stores the JWT in an **httpOnly cookie**; `proxy.ts` guards routes; server components read the cookie and forward `Authorization: Bearer <jwt>` to the backend.
 - **Rejected:** Better Auth — it wants to own the user store/sessions; duplicates existing .NET auth, scope creep vs HANDOFF.
-- **Kept libs:** Zustand (client-only state), Recharts, Tailwind, TypeScript.
 - **Dropped:** Axios, react-router-dom, Vite.
+
+### Refinements during implementation
+- **Server Actions over route handlers.** Login/register/logout/create-season use Server Actions (`use server`) instead of `app/api/*` route handlers — fewer files, idiomatic for form mutations. Actions set the httpOnly `token` cookie plus an httpOnly `user` cookie (display name for the server layout) and `redirect()`.
+- **`proxy.ts`, not `middleware.ts`.** Next 16 renamed Middleware → Proxy (same behavior).
+- **Zustand stores dropped.** In the SSR model the auth/season/application Zustand stores have no client consumer: data is fetched in server components, auth lives in cookies, NavBar gets the username via a prop from the server layout. The `zustand` dep is kept for future genuine client state but no store is ported yet.
+- **Tailwind v4.** Class dark mode via `@custom-variant` in `globals.css` (replaces v3 `darkMode: 'class'`).
 
 ## Branch strategy
 

@@ -104,6 +104,26 @@ Required by MSA 2026 Phase 2 assessment.
 
 ---
 
+## Session 4 — 2026-07-02 — Frontend migration to Next.js
+
+**Prompts:**
+- Swap frontend to Next.js; how to approach given the open frontend PR — re-scaffold manually then port from the PR or rebuild from spec?
+- Locked: App Router, Next-native data layer, httpOnly cookie auth (.NET stays auth authority), rejected Better Auth.
+- Scaffold created manually; port the foundation work incrementally with small staged commits, then open a PR.
+
+**Generated / decided:**
+- New branch `feat/frontend-nextjs` off `main`; Vite/React-Router foundation (PR #14) kept as source of truth, not merged.
+- Ported: entity types (verbatim), server-side data layer (`lib/api.ts` fetch wrapper + season/application/dashboard modules), cookie auth (session helpers + login/register/logout Server Actions), `proxy.ts` route guard, NavBar/ThemeToggle client components, App Router route tree ((auth) + (app) groups).
+- `specs/nextjs-migration.md` records the full decision + file-by-file plan.
+
+**Key design choices:**
+- Server Actions replace Axios + a client auth store for mutations; JWT lives only in an httpOnly cookie, never in client JS.
+- Next 16 specifics: Middleware renamed to `proxy.ts`; `cookies()` is async; Tailwind v4 class dark mode via `@custom-variant`.
+- Zustand data stores dropped — no client consumer under SSR (data fetched in server components, auth in cookies, username passed to NavBar as a prop). `zustand` dep retained for future client state.
+- Server-side fetch means no CORS between browser and .NET.
+
+---
+
 ## How to Add Entries
 
 Each Claude Code session, append a new `## Session N` block with:
