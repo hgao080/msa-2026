@@ -124,6 +124,29 @@ Required by MSA 2026 Phase 2 assessment.
 
 ---
 
+## Session 5 — 2026-07-02 — Design direction + Frontend Core & Dashboard (Issues #8, #9)
+
+**Prompts:**
+- Tackle issues #8 and #9; grab their details, spec further if needed, and use the frontend-design skill to generate an HTML file showcasing 3 visually unique designs for the app (don't base on the current scaffold).
+- Track against the Next.js layout; keep exploring designs — list format over cards, bold/unique, drop the metaphor commitment; suggest a Greek/Roman name meaning "inspire / keep going" instead of "Roster"; keep it clean like the control-room direction, no metaphors.
+- Chose name **Horme** (ὁρμή). Asked how a theme built *around* the word would look.
+- Locked the Horme/Momentum direction; disliked the red/orange — experiment with other accents; flip Offer to green; fix the stale CLAUDE.md line.
+- Chose **Violet**; momentum ramp made stages hard to distinguish — keep the deepening idea but make them distinct.
+- Proceed to spec/build; order Foundation → #8 → #9; rename visible surfaces only. Make incremental commits; use the caveman-commit skill for messages.
+
+**Generated / decided:**
+- Three exploration mockups in `design-explorations/` (rejected card + metaphor directions), landing on `horme-identity.html`.
+- Design system captured in `specs/design-system.md`; product renamed Roster → Horme (visible surfaces).
+- Branch `feat/frontend-horme`. Built Phase 0 (violet tokens, Space Grotesk + JetBrains Mono, NavBar, `lib/status.ts`, `lib/date.ts`, StatusBadge, PipelineTrack), #8 (board + filters/sort + add modal, application detail + StageTimeline + edit/status actions, season history + close + new-season restyle), #9 (momentum curve, stat readouts, CSS conversion funnel, activity heatmap, dismissible insight, milestone grid).
+- Six staged commits; `next build` green after each phase.
+
+**Key design choices:**
+- Identity is kinetic (momentum), not Greek-temple kitsch. Signatures: momentum curve + 5-node pipeline track.
+- Status ramp = analogous violet hue-arc (periwinkle→magenta) so stages stay distinguishable, with Offer=green / Rejected=red / Withdrawn=grey as semantic outliers.
+- All data reads in server components via `lib/*`; mutations via Server Actions with `revalidatePath`; interactivity isolated to small client components. Read Next 16 bundled docs first per `frontend/AGENTS.md`.
+
+---
+
 ## How to Add Entries
 
 Each Claude Code session, append a new `## Session N` block with:
