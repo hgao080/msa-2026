@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Application Board — bold list directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:#0a0a0b;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+
+  .shell-nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:6px;
+    padding:12px 20px;background:rgba(10,10,11,.85);backdrop-filter:blur(12px);
+    border-bottom:1px solid #26262a;font-family:'JetBrains Mono',monospace;}
+  .shell-nav .brand{color:#fafafa;font-weight:600;font-size:13px;margin-right:auto;}
+  .shell-nav .brand span{color:#6b6b73;font-weight:400;}
+  .shell-nav a{color:#a1a1aa;text-decoration:none;font-size:12px;padding:6px 12px;border-radius:6px;transition:.15s;}
+  .shell-nav a:hover,.shell-nav a:focus-visible{background:#26262a;color:#fafafa;outline:none;}
+  .shell-nav .toggle{margin-left:8px;cursor:pointer;border:1px solid #3f3f46;background:#18181b;color:#fafafa;
+    border-radius:6px;padding:6px 12px;font-size:12px;font-family:inherit;}
+  .shell-nav .toggle:focus-visible{outline:2px solid #818cf8;outline-offset:2px;}
+
+  .design-label{max-width:1180px;margin:0 auto;padding:44px 24px 0;font-family:'JetBrains Mono',monospace;
+    color:#71717a;font-size:12px;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;}
+  .design-label b{color:#fafafa;font-size:13px;}
+  .design-label .risk{padding:2px 8px;border-radius:999px;border:1px solid #3f3f46;}
+
+  /* ================================================================
+     A — SIGNAL  ·  terminal ledger, monospace, magenta phosphor
+     bold via density + precision, not metaphor
+     ================================================================ */
+  #a{
+    --bg:#0b0d10; --panel:#101318; --row:#0d1014; --row-hi:#131820;
+    --ink:#e9edf2; --ink-2:#7d8794; --ink-3:#4a5260;
+    --line:#1b2129; --accent:#ff2e7e; --accent-dim:#5a1436;
+    --ok:#22d3a5; --warn:#ffb020; --bad:#ff5747;
+    background:var(--bg);color:var(--ink);padding:26px 24px 72px;font-family:'JetBrains Mono',monospace;
+  }
+  html.light #a{
+    --bg:#f5f6f8; --panel:#ffffff; --row:#ffffff; --row-hi:#fbf1f6;
+    --ink:#12151a; --ink-2:#5c6675; --ink-3:#9aa2ae;
+    --line:#e6e9ee; --accent:#e01271; --accent-dim:#f7d3e5;
+    --ok:#0e9e78; --warn:#c47a0a; --bad:#d63426;
+  }
+  #a .wrap{max-width:1180px;margin:0 auto;}
+  #a .mast{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:6px;}
+  #a .word{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;letter-spacing:-.01em;color:var(--ink);
+    display:flex;align-items:center;gap:10px;}
+  #a .word b{color:var(--accent);}
+  #a .word .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);}
+  #a .sysline{font-size:11px;color:var(--ink-3);letter-spacing:.06em;}
+  #a .add{background:var(--accent);color:#fff;border:none;cursor:pointer;font-family:'JetBrains Mono',monospace;
+    font-weight:600;font-size:12px;letter-spacing:.04em;padding:9px 15px;border-radius:7px;text-transform:uppercase;}
+  #a .add:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  html.light #a .add{color:#fff;}
+
+  #a .seasonline{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin:14px 0 18px;
+    padding-bottom:16px;border-bottom:1px solid var(--line);}
+  #a .seasonline h1{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:19px;margin:0;letter-spacing:-.01em;}
+  #a .stat{font-size:12px;color:var(--ink-2);}
+  #a .stat b{color:var(--ink);}
+  #a .stat .up{color:var(--ok);}
+
+  #a .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:12px;}
+  #a .toolbar .k{color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;font-size:10px;margin-right:2px;}
+  #a .chip{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;
+    padding:6px 11px;cursor:pointer;font-family:inherit;font-size:12px;}
+  #a .chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+  #a .chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  #a select{appearance:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;
+    font-family:inherit;font-size:12px;padding:6px 26px 6px 10px;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ff2e7e' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;}
+  #a select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  #a .toolbar .right{margin-left:auto;color:var(--ink-3);}
+
+  #a .ledger{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);}
+  #a .lhead,#a .lrow{display:grid;
+    grid-template-columns:16px 1.6fr 128px 168px 96px 64px;gap:14px;align-items:center;padding:11px 16px;}
+  #a .lhead{color:var(--ink-3);font-size:10px;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid var(--line);}
+  #a .lhead span:last-child,#a .lrow .date{text-align:right;}
+  #a .lrow{border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s;}
+  #a .lrow:last-child{border-bottom:none;}
+  #a .lrow:hover{background:var(--row-hi);}
+  #a .lrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+  #a .glyph{width:9px;height:9px;border-radius:2px;background:var(--st);box-shadow:0 0 8px color-mix(in srgb,var(--st) 60%,transparent);}
+  #a .co{color:var(--ink);font-weight:600;font-size:14px;}
+  #a .role{color:var(--ink-2);font-size:11.5px;margin-top:2px;}
+  #a .src{color:var(--ink-2);font-size:12px;}
+  #a .src::before{content:"› ";color:var(--ink-3);}
+  /* stage micro-track: 5 funnel nodes */
+  #a .track{display:flex;align-items:center;gap:0;}
+  #a .track i{width:20px;height:3px;background:var(--line);position:relative;}
+  #a .track i::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:7px;height:7px;
+    border-radius:50%;background:var(--line);border:1px solid var(--line);left:-1px;}
+  #a .track i:last-child{width:7px;}
+  #a .track.f1 i:nth-child(-n+1)::before,#a .track.f2 i:nth-child(-n+2)::before,
+  #a .track.f3 i:nth-child(-n+3)::before,#a .track.f4 i:nth-child(-n+4)::before,
+  #a .track.f5 i:nth-child(-n+5)::before{background:var(--st);border-color:var(--st);box-shadow:0 0 6px color-mix(in srgb,var(--st) 70%,transparent);}
+  #a .track.f2 i:nth-child(1),#a .track.f3 i:nth-child(-n+2),
+  #a .track.f4 i:nth-child(-n+3),#a .track.f5 i:nth-child(-n+4){background:var(--st);}
+  #a .stg{color:var(--ink);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
+  #a .date{color:var(--ink-3);font-size:12px;font-variant-numeric:tabular-nums;}
+  #a .s-applied{--st:#6b7686;} #a .s-oa{--st:#4a8cff;} #a .s-screening{--st:#22c3d3;}
+  #a .s-technical{--st:#b06bff;} #a .s-final{--st:var(--warn);} #a .s-offer{--st:var(--ok);}
+  #a .s-rejected{--st:var(--bad);} #a .s-withdrawn{--st:#6b7280;}
+  #a .s-rejected .co,#a .s-withdrawn .co{color:var(--ink-2);}
+
+  /* ================================================================
+     B — INDEX  ·  editorial big-type list, near-monochrome
+     bold via typographic scale, one accent used sparingly
+     ================================================================ */
+  #b{
+    --bg:#0c0c0d; --ink:#f3f1ec; --ink-2:#8f8c84; --ink-3:#5c5a54;
+    --line:#232320; --hair:#1a1a18; --accent:#ff5a2c; --paper-hi:#141412;
+    background:var(--bg);color:var(--ink);padding:30px 24px 80px;font-family:'IBM Plex Mono',monospace;
+  }
+  html.light #b{
+    --bg:#faf9f6; --ink:#131210; --ink-2:#6b675f; --ink-3:#9c988e;
+    --line:#e4e1d8; --hair:#eeece5; --accent:#e8471c; --paper-hi:#f2f0ea;
+  }
+  #b .wrap{max-width:1080px;margin:0 auto;}
+  #b .mast{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+    padding-bottom:16px;border-bottom:2px solid var(--ink);}
+  #b .word{font-family:'Anton',sans-serif;font-weight:400;font-size:40px;line-height:.9;letter-spacing:.01em;text-transform:uppercase;}
+  #b .word em{font-style:normal;color:var(--accent);}
+  #b .tag{font-size:11px;color:var(--ink-2);letter-spacing:.16em;text-transform:uppercase;text-align:right;line-height:1.6;}
+  #b .add{background:var(--ink);color:var(--bg);border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;
+    font-weight:600;font-size:12px;letter-spacing:.06em;padding:10px 16px;text-transform:uppercase;}
+  #b .add:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  #b .subhead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:16px 0 8px;}
+  #b .subhead h1{font-family:'Anton',sans-serif;font-weight:400;font-size:16px;letter-spacing:.04em;text-transform:uppercase;margin:0;color:var(--ink-2);}
+  #b .filters{display:flex;gap:6px;flex-wrap:wrap;}
+  #b .filters button,#b .filters select{background:none;border:1px solid var(--line);color:var(--ink-2);
+    font-family:inherit;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;cursor:pointer;}
+  #b .filters button[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);}
+  #b .filters button:focus-visible,#b .filters select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  #b select{appearance:none;padding-right:24px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23e8471c' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;}
+
+  #b .index-row{display:grid;grid-template-columns:14px 1fr auto;gap:20px;align-items:baseline;
+    padding:18px 0;border-bottom:1px solid var(--hair);cursor:pointer;transition:.12s;position:relative;}
+  #b .index-row:hover{padding-left:10px;background:linear-gradient(90deg,var(--paper-hi),transparent 60%);}
+  #b .index-row:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  #b .keyline{align-self:stretch;width:4px;background:var(--st);border-radius:2px;}
+  #b .main .co{font-family:'Anton',sans-serif;font-weight:400;font-size:34px;line-height:.92;letter-spacing:.005em;
+    text-transform:uppercase;color:var(--ink);}
+  #b .main .role{font-size:12px;color:var(--ink-2);letter-spacing:.04em;margin-top:6px;}
+  #b .meta{text-align:right;display:flex;flex-direction:column;gap:7px;align-items:flex-end;min-width:150px;}
+  #b .status{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--st);
+    display:inline-flex;align-items:center;gap:7px;}
+  #b .status::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--st);}
+  #b .sub{font-size:11px;color:var(--ink-3);letter-spacing:.05em;}
+  #b .index-row.dim .co{color:var(--ink-2);}
+  #b .index-row.dim .co{-webkit-text-stroke:0;}
+  #b .s-applied{--st:#8b93a1;} #b .s-oa{--st:#5b8dff;} #b .s-screening{--st:#22b8c9;}
+  #b .s-technical{--st:#a877ff;} #b .s-final{--st:#f0a020;} #b .s-offer{--st:#28c98a;}
+  #b .s-rejected{--st:#e0533a;} #b .s-withdrawn{--st:#7a7770;}
+
+  @media (max-width:720px){
+    #a .lhead{display:none;}
+    #a .lrow{grid-template-columns:14px 1fr auto;grid-template-areas:"g co stg" "g role date" "g track track";row-gap:6px;}
+    #a .glyph{grid-area:g;align-self:start;margin-top:5px;} #a .co{grid-area:co;} #a .role{grid-area:role;}
+    #a .src{display:none;} #a .stg{grid-area:stg;justify-self:end;} #a .track{grid-area:track;} #a .date{grid-area:date;justify-self:end;}
+    #b .word{font-size:30px;} #b .main .co{font-size:26px;}
+    #b .index-row{grid-template-columns:14px 1fr;gap:14px;}
+    #b .meta{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:baseline;padding-left:34px;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="shell-nav">
+  <div class="brand">HORME <span>/ board — bold list directions (v2)</span></div>
+  <a href="#a">A · Signal</a>
+  <a href="#b">B · Index</a>
+  <button class="toggle" id="themeToggle" aria-label="Toggle light and dark">◐ theme</button>
+</nav>
+
+<!-- ============ A · SIGNAL ============ -->
+<div class="design-label"><b>A — Signal</b><span class="risk">risk: bold</span> terminal ledger · monospace · magenta phosphor · Space Grotesk / JetBrains Mono</div>
+<section id="a">
+  <div class="wrap">
+    <div class="mast">
+      <div class="word"><span class="dot"></span>hor<b>me</b>&nbsp;<span class="sysline">// ὁρμή · active season · wk 3</span></div>
+      <button class="add">＋ log application</button>
+    </div>
+    <div class="seasonline">
+      <h1>Summer '26 Internships</h1>
+      <span class="stat"><b>8</b> apps</span>
+      <span class="stat"><b>4</b>/5 this wk</span>
+      <span class="stat">resp <b class="up">50%</b></span>
+      <span class="stat">streak <b>6d</b> 🔥</span>
+    </div>
+
+    <div class="toolbar">
+      <span class="k">sort</span>
+      <button class="chip" aria-pressed="true">applied ↓</button>
+      <button class="chip" aria-pressed="false">company</button>
+      <button class="chip" aria-pressed="false">updated</button>
+      <span class="k" style="margin-left:8px">filter</span>
+      <select aria-label="status"><option>all status</option><option>applied</option><option>technical</option><option>offer</option></select>
+      <select aria-label="source"><option>all sources</option><option>linkedin</option><option>referral</option><option>seek</option></select>
+      <span class="right">8 rows</span>
+    </div>
+
+    <div class="ledger" role="table">
+      <div class="lhead" role="row"><span></span><span>Company / Role</span><span>Source</span><span>Pipeline</span><span>Stage</span><span>Age</span></div>
+
+      <div class="lrow s-offer" role="row" tabindex="0">
+        <span class="glyph"></span>
+        <span><div class="co">Google</div><div class="role">STEP Intern</div></span>
+        <span class="src">Referral</span>
+        <span class="track f5"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="stg">Offer</span><span class="date">20d</span>
+      </div>
+      <div class="lrow s-final" role="row" tabindex="0">
+        <span class="glyph"></span>
+        <span><div class="co">SafetyCulture</div><div class="role">Full Stack Intern</div></span>
+        <span class="src">Seek</span>
+        <span class="track f4"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="stg">Final</span><span class="date">10d</span>
+      </div>
+      <div class="lrow s-technical" role="row" tabindex="0">
+        <span class="glyph"></span>
+        <span><div class="co">Canva</div><div class="role">Frontend Engineer Intern</div></span>
+        <span class="src">Referral</span>
+        <span class="track f3"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="stg">Technical</span><span class="date">12d</span>
+      </div>
+      <div class="lrow s-screening" role="row" tabindex="0">
+        <span class="glyph"></span>
+        <span><div class="co">Atlassian</div><div class="role">Software Engineer Intern</div></span>
+        <span class="src">LinkedIn</span>
+        <span class="track f3"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="stg">Screening</span><span class="date">5d</span>
+      </div>
+      <div class="lrow s-oa" role="row" tabindex="0">
+        <span class="glyph"></span>
+        <span><div class="co">WiseTech Global</div><div class="role">Backend Intern</div></span>
+        <span class="src">Company site</span>
+        <span class="track f2"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="stg">OA</span><span class="date">8d</span>
+      </div>
+      <div class="lrow s-applied" role="row" tabindex="0">
+        <span class="glyph"></span>
+        <span><div class="co">Xero</div><div class="role">Grad Software Engineer</div></span>
+        <span class="src">Seek</span>
+        <span class="track f1"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="stg">Applied</span><span class="date">2d</span>
+      </div>
+      <div class="lrow s-rejected" role="row" tabindex="0">
+        <span class="glyph"></span>
+        <span><div class="co">CommBank</div><div class="role">Data Engineer Intern</div></span>
+        <span class="src">LinkedIn</span>
+        <span class="track f2"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="stg">Rejected</span><span class="date">15d</span>
+      </div>
+      <div class="lrow s-withdrawn" role="row" tabindex="0">
+        <span class="glyph"></span>
+        <span><div class="co">Rokt</div><div class="role">Software Engineer</div></span>
+        <span class="src">Other</span>
+        <span class="track f1"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="stg">Withdrawn</span><span class="date">18d</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ B · INDEX ============ -->
+<div class="design-label"><b>B — Index</b><span class="risk">risk: bold</span> editorial big-type list · near-monochrome + 1 accent · Anton / IBM Plex Mono</div>
+<section id="b">
+  <div class="wrap">
+    <div class="mast">
+      <div class="word">HOR<em>ME</em></div>
+      <div class="tag">Summer '26 Internships<br>8 applications · wk 3 · 6-day streak</div>
+      <button class="add">＋ New</button>
+    </div>
+
+    <div class="subhead">
+      <h1>The Board — 8 in play</h1>
+      <div class="filters">
+        <button aria-pressed="true">Applied ↓</button>
+        <button aria-pressed="false">A–Z</button>
+        <select aria-label="status"><option>All status</option><option>Offer</option><option>Technical</option></select>
+        <select aria-label="source"><option>All sources</option><option>Referral</option><option>LinkedIn</option></select>
+      </div>
+    </div>
+
+    <div role="list">
+      <div class="index-row s-offer" role="listitem" tabindex="0">
+        <span class="keyline"></span>
+        <span class="main"><div class="co">Google</div><div class="role">STEP Intern</div></span>
+        <span class="meta"><span class="status">Offer</span><span class="sub">Referral · 20d ago</span></span>
+      </div>
+      <div class="index-row s-final" role="listitem" tabindex="0">
+        <span class="keyline"></span>
+        <span class="main"><div class="co">SafetyCulture</div><div class="role">Full Stack Intern</div></span>
+        <span class="meta"><span class="status">Final</span><span class="sub">Seek · 10d ago</span></span>
+      </div>
+      <div class="index-row s-technical" role="listitem" tabindex="0">
+        <span class="keyline"></span>
+        <span class="main"><div class="co">Canva</div><div class="role">Frontend Engineer Intern</div></span>
+        <span class="meta"><span class="status">Technical</span><span class="sub">Referral · 12d ago</span></span>
+      </div>
+      <div class="index-row s-screening" role="listitem" tabindex="0">
+        <span class="keyline"></span>
+        <span class="main"><div class="co">Atlassian</div><div class="role">Software Engineer Intern</div></span>
+        <span class="meta"><span class="status">Screening</span><span class="sub">LinkedIn · 5d ago</span></span>
+      </div>
+      <div class="index-row s-oa" role="listitem" tabindex="0">
+        <span class="keyline"></span>
+        <span class="main"><div class="co">WiseTech</div><div class="role">Backend Intern</div></span>
+        <span class="meta"><span class="status">OA</span><span class="sub">Company site · 8d ago</span></span>
+      </div>
+      <div class="index-row s-applied" role="listitem" tabindex="0">
+        <span class="keyline"></span>
+        <span class="main"><div class="co">Xero</div><div class="role">Grad Software Engineer</div></span>
+        <span class="meta"><span class="status">Applied</span><span class="sub">Seek · 2d ago</span></span>
+      </div>
+      <div class="index-row s-rejected dim" role="listitem" tabindex="0">
+        <span class="keyline"></span>
+        <span class="main"><div class="co">CommBank</div><div class="role">Data Engineer Intern</div></span>
+        <span class="meta"><span class="status">Rejected</span><span class="sub">LinkedIn · 15d ago</span></span>
+      </div>
+      <div class="index-row s-withdrawn dim" role="listitem" tabindex="0">
+        <span class="keyline"></span>
+        <span class="main"><div class="co">Rokt</div><div class="role">Software Engineer</div></span>
+        <span class="meta"><span class="status">Withdrawn</span><span class="sub">Other · 18d ago</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const root=document.documentElement;
+  document.getElementById('themeToggle').addEventListener('click',()=>{root.classList.toggle('dark');root.classList.toggle('light');});
+  document.querySelectorAll('#a .toolbar, #b .filters').forEach(bar=>{
+    bar.addEventListener('click',e=>{
+      const btn=e.target.closest('button.chip, button[aria-pressed]');
+      if(!btn||!bar.contains(btn))return;
+      bar.querySelectorAll('[aria-pressed]').forEach(b=>b.setAttribute('aria-pressed','false'));
+      btn.setAttribute('aria-pressed','true');
+    });
+  });
+</script>
+</body>
+</html>

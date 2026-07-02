@@ -9,7 +9,7 @@ See `specs/project-plan.md` for design decisions and tech stack rationale.
 ## Stack
 
 - **Backend:** ASP.NET Core Web API (.NET 10), EF Core 9, SQLite, JWT, BCrypt, Scalar, xUnit + Moq
-- **Frontend:** React 19 + TypeScript, Vite, React Router v6, Zustand, Tailwind CSS, Axios, Recharts, Vitest
+- **Frontend:** Next.js 16 (App Router) + TypeScript, Tailwind CSS v4, Server Actions, httpOnly-cookie JWT auth, Vitest. (Migrated from Vite/React-Router/Zustand — see `specs/nextjs-migration.md`.)
 - **Package manager:** pnpm (frontend)
 - **Backend solution:** `backend/Roster.slnx` (not `.sln`)
 
