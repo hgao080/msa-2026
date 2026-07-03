@@ -1,8 +1,8 @@
 'use client'
 
 import { useActionState, useState } from 'react'
-import { X } from 'lucide-react'
 import { closeSeasonAction } from '@/app/(app)/seasons/actions'
+import { Modal } from '@/components/ui/Modal'
 import type { ActionState } from '@/app/(auth)/actions'
 
 export function CloseSeason({ seasonId }: { seasonId: string }) {
@@ -20,18 +20,11 @@ export function CloseSeason({ seasonId }: { seasonId: string }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
-          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-xl border border-line bg-surface p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold text-fg">Close this season</h2>
-              <button onClick={() => setOpen(false)} aria-label="Close" className="text-fg-3 hover:text-fg">
-                <X size={18} />
-              </button>
-            </div>
-            <p className="mb-4 text-sm text-fg-2">
-              Archives the season with its final stats. You can start a new one afterward.
-            </p>
-            <form action={formAction} className="space-y-3">
+        <Modal title="Close this season" onClose={() => setOpen(false)}>
+          <p className="mb-4 text-sm text-fg-2">
+            Archives the season with its final stats. You can start a new one afterward.
+          </p>
+          <form action={formAction} className="space-y-3">
               <label className="block">
                 <span className="mb-1 block text-xs text-fg-2">Outcome (optional)</span>
                 <textarea
@@ -45,9 +38,8 @@ export function CloseSeason({ seasonId }: { seasonId: string }) {
               <button type="submit" disabled={pending} className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white disabled:opacity-50">
                 {pending ? 'Closing…' : 'Close season'}
               </button>
-            </form>
-          </div>
-        </div>
+          </form>
+        </Modal>
       )}
     </>
   )

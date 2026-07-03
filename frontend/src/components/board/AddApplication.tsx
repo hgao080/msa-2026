@@ -1,8 +1,9 @@
 'use client'
 
 import { useActionState, useEffect, useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { createApplicationAction, type FormState } from '@/app/(app)/board/actions'
+import { Modal } from '@/components/ui/Modal'
 import { SOURCES, sourceLabel } from '@/lib/status'
 
 const field =
@@ -28,21 +29,8 @@ export function AddApplication({ seasonId }: { seasonId: string }) {
       </button>
 
       {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-xl border border-line bg-surface p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold text-fg">Log application</h2>
-              <button onClick={() => setOpen(false)} aria-label="Close" className="text-fg-3 hover:text-fg">
-                <X size={18} />
-              </button>
-            </div>
-            <form action={formAction} className="space-y-3">
+        <Modal title="Log application" onClose={() => setOpen(false)}>
+          <form action={formAction} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <label className="col-span-2 block">
                   <span className="mb-1 block text-xs text-fg-2">Company *</span>
@@ -86,9 +74,8 @@ export function AddApplication({ seasonId }: { seasonId: string }) {
               >
                 {pending ? 'Adding…' : 'Add to board'}
               </button>
-            </form>
-          </div>
-        </div>
+          </form>
+        </Modal>
       )}
     </>
   )
