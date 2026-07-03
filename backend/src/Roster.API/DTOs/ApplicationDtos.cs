@@ -18,8 +18,6 @@ public record UpdateApplicationRequest(
     string? Notes
 );
 
-public record PatchStatusRequest(string Status);
-
 public record CreateStageRequest(string Type, DateTime? ScheduledDate);
 public record UpdateStageRequest(string? Status, DateTime? CompletedDate, string? Notes);
 
@@ -35,6 +33,8 @@ public record ApplicationDto(
     DateTime LastUpdated,
     string? ReferrerName,
     string? Notes,
+    DateTime? OfferedAt,
+    DateTime? WithdrawnAt,
     List<ApplicationStageDto> Stages
 );
 

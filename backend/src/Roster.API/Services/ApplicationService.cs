@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Roster.API.Data;
 using Roster.API.DTOs;
 using Roster.API.Exceptions;
+using Roster.API.Helpers;
 using Roster.API.Models;
 
 namespace Roster.API.Services;
@@ -116,22 +117,67 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
         await db.SaveChangesAsync();
     }
 
-    public async Task<ApplicationDto> PatchStatusAsync(Guid id, Guid userId, string status)
+    public async Task<ApplicationDto> OfferAsync(Guid id, Guid userId)
     {
-        if (!Enum.TryParse<ApplicationStatus>(status, out var s))
-            throw new BadRequestException("Invalid status value");
-
         var app = await db.Applications
                       .Include(a => a.Stages)
                       .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
                   ?? throw new NotFoundException("Application not found");
 
-        app.Status = s;
+        app.OfferedAt = DateTime.UtcNow;
+        app.Status = ApplicationStats.ComputeStatus(app);
         app.LastUpdated = DateTime.UtcNow;
         await LogActivity(userId);
         await db.SaveChangesAsync();
         await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
-        
+
+        return ToDto(app);
+    }
+
+    public async Task<ApplicationDto> UnofferAsync(Guid id, Guid userId)
+    {
+        var app = await db.Applications
+                      .Include(a => a.Stages)
+                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
+                  ?? throw new NotFoundException("Application not found");
+
+        app.OfferedAt = null;
+        app.Status = ApplicationStats.ComputeStatus(app);
+        app.LastUpdated = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return ToDto(app);
+    }
+
+    public async Task<ApplicationDto> WithdrawAsync(Guid id, Guid userId)
+    {
+        var app = await db.Applications
+                      .Include(a => a.Stages)
+                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
+                  ?? throw new NotFoundException("Application not found");
+
+        app.WithdrawnAt = DateTime.UtcNow;
+        app.Status = ApplicationStats.ComputeStatus(app);
+        app.LastUpdated = DateTime.UtcNow;
+        await LogActivity(userId);
+        await db.SaveChangesAsync();
+        await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
+
+        return ToDto(app);
+    }
+
+    public async Task<ApplicationDto> UnwithdrawAsync(Guid id, Guid userId)
+    {
+        var app = await db.Applications
+                      .Include(a => a.Stages)
+                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
+                  ?? throw new NotFoundException("Application not found");
+
+        app.WithdrawnAt = null;
+        app.Status = ApplicationStats.ComputeStatus(app);
+        app.LastUpdated = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
         return ToDto(app);
     }
 
@@ -152,7 +198,8 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
             Type = type,
             ScheduledDate = request.ScheduledDate
         };
-        db.ApplicationStages.Add(stage);
+        app.Stages.Add(stage);
+        app.Status = ApplicationStats.ComputeStatus(app);
         app.LastUpdated = DateTime.UtcNow;
         await LogActivity(userId);
         await db.SaveChangesAsync();
@@ -176,6 +223,7 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
             stage.Status = st;
         if (request.CompletedDate.HasValue) stage.CompletedDate = request.CompletedDate;
         if (request.Notes != null) stage.Notes = request.Notes;
+        app.Status = ApplicationStats.ComputeStatus(app);
         app.LastUpdated = DateTime.UtcNow;
         await LogActivity(userId);
         await db.SaveChangesAsync();
@@ -196,6 +244,8 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
         a.LastUpdated,
         a.ReferrerName,
         a.Notes,
+        a.OfferedAt,
+        a.WithdrawnAt,
         a.Stages.Select(ToStageDto).ToList()
     );
 

@@ -14,10 +14,12 @@ public class Application
     public DateTime LastUpdated { get; set; }
     public string? ReferrerName { get; set; }
     public string? Notes { get; set; }
+    public DateTime? OfferedAt { get; set; }
+    public DateTime? WithdrawnAt { get; set; }
 
     public Season Season { get; set; } = null!;
     public ICollection<ApplicationStage> Stages { get; set; } = [];
 }
 
 public enum ApplicationSource { LinkedIn, Seek, Referral, CompanyWebsite, Other }
-public enum ApplicationStatus { Applied, OA, Screening, Technical, Final, Offer, Rejected, Withdrawn }
+public enum ApplicationStatus { Applied, OA, PhoneScreen, Technical, Behavioural, Offer, Rejected, Withdrawn }

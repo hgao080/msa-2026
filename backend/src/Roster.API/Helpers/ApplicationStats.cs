@@ -4,6 +4,17 @@ namespace Roster.API.Helpers;
 
 public static class ApplicationStats
 {
+    public static ApplicationStatus ComputeStatus(Application app)
+    {
+        if (app.OfferedAt.HasValue) return ApplicationStatus.Offer;
+        if (app.WithdrawnAt.HasValue) return ApplicationStatus.Withdrawn;
+        if (app.Stages.Count == 0) return ApplicationStatus.Applied;
+
+        var latest = app.Stages.OrderByDescending(s => s.CreatedAt).First();
+        if (latest.Status == StageStatus.Failed) return ApplicationStatus.Rejected;
+        return (ApplicationStatus)latest.Type;
+    }
+
     public static double ResponseRate(IList<Application> apps)
     {
         if (apps.Count == 0) return 0;

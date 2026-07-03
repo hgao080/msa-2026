@@ -50,11 +50,35 @@ public class ApplicationsController(ApplicationService applicationService) : App
         return NoContent();
     }
 
-    [HttpPatch("applications/{id:guid}/status")]
-    public async Task<IActionResult> PatchStatus(Guid id, [FromBody] PatchStatusRequest request)
+    [HttpPost("applications/{id:guid}/offer")]
+    public async Task<IActionResult> Offer(Guid id)
     {
-        var app = await applicationService.PatchStatusAsync(id, GetUserId(), request.Status);
-        
+        var app = await applicationService.OfferAsync(id, GetUserId());
+
+        return Ok(app);
+    }
+
+    [HttpDelete("applications/{id:guid}/offer")]
+    public async Task<IActionResult> Unoffer(Guid id)
+    {
+        var app = await applicationService.UnofferAsync(id, GetUserId());
+
+        return Ok(app);
+    }
+
+    [HttpPost("applications/{id:guid}/withdraw")]
+    public async Task<IActionResult> Withdraw(Guid id)
+    {
+        var app = await applicationService.WithdrawAsync(id, GetUserId());
+
+        return Ok(app);
+    }
+
+    [HttpDelete("applications/{id:guid}/withdraw")]
+    public async Task<IActionResult> Unwithdraw(Guid id)
+    {
+        var app = await applicationService.UnwithdrawAsync(id, GetUserId());
+
         return Ok(app);
     }
 

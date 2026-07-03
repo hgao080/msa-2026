@@ -14,9 +14,9 @@ public class DashboardService(AppDbContext db)
         var responded = applications.Count(a =>
             a.Status != ApplicationStatus.Applied && a.Status != ApplicationStatus.Withdrawn);
         var interviewed = applications.Count(a =>
-            a.Stages.Count != 0 || (int)a.Status >= (int)ApplicationStatus.Screening);
+            a.Stages.Count != 0 || a.Status == ApplicationStatus.Offer);
         var final = applications.Count(a =>
-            a.Status is ApplicationStatus.Final or ApplicationStatus.Offer);
+            a.Status is ApplicationStatus.Behavioural or ApplicationStatus.Offer);
         var offer = applications.Count(a => a.Status == ApplicationStatus.Offer);
 
         return

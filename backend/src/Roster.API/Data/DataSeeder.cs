@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Roster.API.Helpers;
 using Roster.API.Models;
 
 namespace Roster.API.Data;
@@ -72,16 +73,24 @@ public static class DataSeeder
             ("Employment Hero", "Junior Engineer")
         };
 
-        var statuses = new[]
+        // (stages reached, fail the last one, mark offered, mark withdrawn)
+        var plans = new[]
         {
-            ApplicationStatus.Applied, ApplicationStatus.Applied, ApplicationStatus.Applied,
-            ApplicationStatus.Screening, ApplicationStatus.Screening,
-            ApplicationStatus.OA, ApplicationStatus.OA,
-            ApplicationStatus.Technical, ApplicationStatus.Technical,
-            ApplicationStatus.Final,
-            ApplicationStatus.Offer,
-            ApplicationStatus.Rejected, ApplicationStatus.Rejected, ApplicationStatus.Rejected,
-            ApplicationStatus.Withdrawn
+            (Stages: 0, Fail: false, Offer: false, Withdraw: false),
+            (Stages: 0, Fail: false, Offer: false, Withdraw: false),
+            (Stages: 0, Fail: false, Offer: false, Withdraw: false),
+            (Stages: 2, Fail: false, Offer: false, Withdraw: false),
+            (Stages: 2, Fail: false, Offer: false, Withdraw: false),
+            (Stages: 1, Fail: false, Offer: false, Withdraw: false),
+            (Stages: 1, Fail: false, Offer: false, Withdraw: false),
+            (Stages: 3, Fail: false, Offer: false, Withdraw: false),
+            (Stages: 3, Fail: false, Offer: false, Withdraw: false),
+            (Stages: 4, Fail: false, Offer: false, Withdraw: false),
+            (Stages: 4, Fail: false, Offer: true, Withdraw: false),
+            (Stages: rng.Next(1, 4), Fail: true, Offer: false, Withdraw: false),
+            (Stages: rng.Next(1, 4), Fail: true, Offer: false, Withdraw: false),
+            (Stages: rng.Next(1, 4), Fail: true, Offer: false, Withdraw: false),
+            (Stages: rng.Next(0, 3), Fail: false, Offer: false, Withdraw: true)
         };
         var sources = Enum.GetValues<ApplicationSource>();
 
@@ -91,7 +100,7 @@ public static class DataSeeder
         for (var i = 0; i < companies.Length; i++)
         {
             var (company, role) = companies[i];
-            var status = statuses[i % statuses.Length];
+            var plan = plans[i % plans.Length];
             var appliedDaysAgo = rng.Next(1, 44);
             var appliedDate = DateTime.UtcNow.AddDays(-appliedDaysAgo);
 
@@ -103,15 +112,17 @@ public static class DataSeeder
                 Company = company,
                 Role = role,
                 Source = sources[rng.Next(sources.Length)],
-                Status = status,
                 AppliedDate = appliedDate,
                 LastUpdated = appliedDate.AddDays(rng.Next(0, Math.Max(1, appliedDaysAgo))),
                 ReferrerName = rng.Next(0, 4) == 0 ? "Alex Chen" : null,
-                Notes = status == ApplicationStatus.Offer ? "Verbal offer received, awaiting written contract" : null
+                OfferedAt = plan.Offer ? appliedDate.AddDays(rng.Next(5, Math.Max(6, appliedDaysAgo))) : null,
+                WithdrawnAt = plan.Withdraw ? appliedDate.AddDays(rng.Next(1, Math.Max(2, appliedDaysAgo))) : null,
+                Notes = plan.Offer ? "Verbal offer received, awaiting written contract" : null
             };
+            application.Stages = BuildStages(application, plan.Stages, plan.Fail, appliedDate, rng).ToList();
+            application.Status = ApplicationStats.ComputeStatus(application);
             applications.Add(application);
-
-            stages.AddRange(BuildStages(application, status, appliedDate, rng));
+            stages.AddRange(application.Stages);
         }
 
         db.Applications.AddRange(applications);
@@ -149,33 +160,20 @@ public static class DataSeeder
     }
 
     private static IEnumerable<ApplicationStage> BuildStages(
-        Application application, ApplicationStatus status, DateTime appliedDate, Random rng)
+        Application application, int reachedCount, bool failLast, DateTime appliedDate, Random rng)
     {
         var progression = new[]
         {
-            StageType.OA, StageType.PhoneScreen, StageType.Technical,
-            StageType.Behavioural, StageType.Final
+            StageType.OA, StageType.PhoneScreen, StageType.Technical, StageType.Behavioural
         };
-
-        var reachedCount = status switch
-        {
-            ApplicationStatus.Applied => 0,
-            ApplicationStatus.OA => 1,
-            ApplicationStatus.Screening => 2,
-            ApplicationStatus.Technical => 3,
-            ApplicationStatus.Final => 5,
-            ApplicationStatus.Offer => 5,
-            ApplicationStatus.Rejected => rng.Next(1, 4),
-            ApplicationStatus.Withdrawn => rng.Next(0, 3),
-            _ => 0
-        };
+        reachedCount = Math.Min(reachedCount, progression.Length);
 
         var cursor = appliedDate;
         for (var i = 0; i < reachedCount; i++)
         {
             cursor = cursor.AddDays(rng.Next(1, 6));
             var isLast = i == reachedCount - 1;
-            var failedHere = isLast && status == ApplicationStatus.Rejected;
+            var failedHere = isLast && failLast;
 
             yield return new ApplicationStage
             {
@@ -183,6 +181,7 @@ public static class DataSeeder
                 ApplicationId = application.Id,
                 Type = progression[i],
                 Status = failedHere ? StageStatus.Failed : StageStatus.Completed,
+                CreatedAt = cursor,
                 ScheduledDate = cursor,
                 CompletedDate = failedHere ? null : cursor
             };
