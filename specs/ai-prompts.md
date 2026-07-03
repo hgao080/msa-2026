@@ -191,6 +191,25 @@ Required by MSA 2026 Phase 2 assessment.
 
 ---
 
+## Session 8 — 2026-07-03 — Edit and delete stages
+
+**Prompts:**
+- "Some things I would still like to brush up are making it so that a user can edit or delete stages. Make the backend changes then follow with the frontend changes. Use the same process as earlier to accomplish task"
+- "commit and continue" (×2)
+
+**Generated / decided:**
+- `UpdateStageRequest` gains `Type`/`ScheduledDate` so an existing stage can be fully corrected (not just status/notes as before).
+- New `ApplicationService.DeleteStageAsync` + `DELETE /applications/{id}/stages/{stageId}`; both edit and delete recompute `Application.Status` via `ComputeStatus` afterward, so deleting the latest stage correctly falls back to whatever stage is now latest, or `Applied` if none remain.
+- Frontend: `StageTimeline`'s per-stage row (`StageRow`) now toggles into an inline edit form (type/scheduled date/notes) and has a delete button behind a native `confirm()` prompt. `lib/applications.ts` gets `deleteStage`; `updateStage`'s data shape extended to match.
+
+**Key design choices:**
+- Applied the same process as session 7: plan the assumption inline (edit = Type/ScheduledDate/Notes; status stays on the existing picker), implement backend first, verify with build + `dotnet test` + a live smoke test (add two stages, edit one's type, delete both, confirm `status` falls back correctly at each step) before touching the frontend.
+- `DeleteStageAsync` explicitly calls both `db.ApplicationStages.Remove(stage)` and `app.Stages.Remove(stage)` — the latter isn't strictly required for EF to issue the right `DELETE`, but it guarantees the in-memory `app.Stages` collection used by `ComputeStatus` is correct immediately, without depending on fixup timing. Deliberate defensiveness after the session 7 lesson about `Add`-only navigation mutations not being reliably tracked.
+- No new milestone/activity side effects on delete — removing a stage isn't a forward-progress action, so it doesn't call `LogActivity` or `CheckAndUnlockMilestones` (unlike add/edit, which still do).
+- Confirm-before-delete uses a plain `window.confirm()` rather than a custom modal — matches the scope of a "brush up," not a UI redesign.
+
+---
+
 ## How to Add Entries
 
 Each Claude Code session, append a new `## Session N` block with:
