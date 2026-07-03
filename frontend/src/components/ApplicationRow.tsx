@@ -27,7 +27,7 @@ export function ApplicationRow({ app }: { app: Application }) {
         <span className="text-fg-3">› </span>{sourceLabel(app.source)}
       </span>
       <span className="max-[640px]:hidden">
-        <PipelineTrack status={app.status} />
+        <PipelineTrack status={app.status} stages={app.stages} offeredAt={app.offeredAt} />
       </span>
       <span className="text-xs font-semibold uppercase tracking-wide max-[640px]:justify-self-end" style={{ color: STATUS_COLOR[app.status] }}>
         {app.status}

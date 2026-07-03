@@ -1,8 +1,16 @@
-import type { ApplicationStatus } from '@/types'
-import { STATUS_COLOR, STATUS_LEVEL } from '@/lib/status'
+import type { Application, ApplicationStatus } from '@/types'
+import { STATUS_COLOR, pipelineLevel } from '@/lib/status'
 
-export function PipelineTrack({ status }: { status: ApplicationStatus }) {
-  const level = STATUS_LEVEL[status]
+export function PipelineTrack({
+  status,
+  stages,
+  offeredAt,
+}: {
+  status: ApplicationStatus
+  stages: Application['stages']
+  offeredAt?: Application['offeredAt']
+}) {
+  const level = pipelineLevel({ stages, offeredAt })
   const color = STATUS_COLOR[status]
 
   return (

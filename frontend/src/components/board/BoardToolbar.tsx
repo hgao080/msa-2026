@@ -14,7 +14,7 @@ export function BoardToolbar() {
   const pathname = usePathname()
   const params = useSearchParams()
 
-  const sort = params.get('sort') ?? 'appliedDate'
+  const sort = params.get('sort') ?? 'pipeline'
   const order = params.get('order') ?? 'desc'
   const status = params.get('status') ?? ''
   const source = params.get('source') ?? ''

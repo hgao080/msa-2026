@@ -27,7 +27,7 @@ export default async function ApplicationDetailPage({
           <h1 className="font-display text-2xl font-bold tracking-tight text-fg">{app.company}</h1>
           <p className="mt-0.5 text-fg-2">{app.role}</p>
           <div className="mt-3">
-            <PipelineTrack status={app.status} />
+            <PipelineTrack status={app.status} stages={app.stages} offeredAt={app.offeredAt} />
           </div>
         </div>
         <div className="flex items-center gap-2">

@@ -33,7 +33,7 @@ export default async function ApplicationBoardPage({
   const apps = await getApplications(active.id, {
     status: (sp.status as ApplicationStatus) || undefined,
     source: sp.source || undefined,
-    sort: sp.sort || 'appliedDate',
+    sort: sp.sort || 'pipeline',
     order: sp.order || 'desc',
   })
 

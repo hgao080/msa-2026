@@ -1,4 +1,4 @@
-import type { ApplicationStatus } from '@/types'
+import type { Application, ApplicationStatus } from '@/types'
 
 export const STATUSES: ApplicationStatus[] = [
   'Applied', 'OA', 'PhoneScreen', 'Technical', 'Behavioural', 'Offer', 'Rejected', 'Withdrawn',
@@ -18,16 +18,15 @@ export const STATUS_COLOR: Record<ApplicationStatus, string> = {
   Withdrawn: 'var(--st-withdrawn)',
 }
 
-// position on the 5-node pipeline (Applied → Responded → Interview → Late round → Offer)
-export const STATUS_LEVEL: Record<ApplicationStatus, number> = {
-  Applied: 1,
-  OA: 2,
-  PhoneScreen: 2,
-  Technical: 3,
-  Behavioural: 4,
-  Offer: 5,
-  Rejected: 2,
-  Withdrawn: 1,
+// position on the 5-node pipeline (Applied → Responded → Interview → Late round → Offer),
+// based on the furthest stage type reached — not the most recently added stage
+export function pipelineLevel(app: Pick<Application, 'stages' | 'offeredAt'>): number {
+  if (app.offeredAt) return 5
+  const types = new Set(app.stages.map((s) => s.type))
+  if (types.has('Behavioural')) return 4
+  if (types.has('Technical')) return 3
+  if (types.has('OA') || types.has('PhoneScreen')) return 2
+  return 1
 }
 
 const SOURCE_LABEL: Record<string, string> = {
