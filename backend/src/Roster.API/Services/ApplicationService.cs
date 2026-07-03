@@ -198,13 +198,13 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
             Type = type,
             ScheduledDate = request.ScheduledDate
         };
-        app.Stages.Add(stage);
+        db.ApplicationStages.Add(stage);
         app.Status = ApplicationStats.ComputeStatus(app);
         app.LastUpdated = DateTime.UtcNow;
         await LogActivity(userId);
         await db.SaveChangesAsync();
         await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
-        
+
         return ToStageDto(stage);
     }
 

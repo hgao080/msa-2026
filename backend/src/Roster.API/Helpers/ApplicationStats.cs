@@ -12,7 +12,7 @@ public static class ApplicationStats
 
         var latest = app.Stages.OrderByDescending(s => s.CreatedAt).First();
         if (latest.Status == StageStatus.Failed) return ApplicationStatus.Rejected;
-        return (ApplicationStatus)latest.Type;
+        return Enum.Parse<ApplicationStatus>(latest.Type.ToString());
     }
 
     public static double ResponseRate(IList<Application> apps)

@@ -83,8 +83,65 @@ public class ApplicationStatsTests
         var apps = new List<Application>
         {
             new() { Status = ApplicationStatus.Applied },
-            new() { Status = ApplicationStatus.Screening },
+            new() { Status = ApplicationStatus.PhoneScreen },
         };
         Assert.Equal(0.5, ApplicationStats.ResponseRate(apps));
+    }
+
+    private static Application AppWithStages(params ApplicationStage[] stages)
+    {
+        var app = new Application();
+        foreach (var s in stages) app.Stages.Add(s);
+        return app;
+    }
+
+    private static ApplicationStage Stage(StageType type, StageStatus status, int createdDaysAgo) => new()
+    {
+        Type = type,
+        Status = status,
+        CreatedAt = DateTime.UtcNow.AddDays(-createdDaysAgo)
+    };
+
+    [Fact]
+    public void ComputeStatus_NoStages_ReturnsApplied()
+    {
+        var app = new Application();
+        Assert.Equal(ApplicationStatus.Applied, ApplicationStats.ComputeStatus(app));
+    }
+
+    [Fact]
+    public void ComputeStatus_UsesLatestStageByCreatedAt()
+    {
+        var app = AppWithStages(
+            Stage(StageType.OA, StageStatus.Completed, createdDaysAgo: 5),
+            Stage(StageType.Technical, StageStatus.Completed, createdDaysAgo: 1));
+
+        Assert.Equal(ApplicationStatus.Technical, ApplicationStats.ComputeStatus(app));
+    }
+
+    [Fact]
+    public void ComputeStatus_LatestStageFailed_ReturnsRejected()
+    {
+        var app = AppWithStages(
+            Stage(StageType.OA, StageStatus.Completed, createdDaysAgo: 5),
+            Stage(StageType.Technical, StageStatus.Failed, createdDaysAgo: 1));
+
+        Assert.Equal(ApplicationStatus.Rejected, ApplicationStats.ComputeStatus(app));
+    }
+
+    [Fact]
+    public void ComputeStatus_WithdrawnAtSet_ReturnsWithdrawn()
+    {
+        var app = AppWithStages(Stage(StageType.OA, StageStatus.Completed, createdDaysAgo: 1));
+        app.WithdrawnAt = DateTime.UtcNow;
+
+        Assert.Equal(ApplicationStatus.Withdrawn, ApplicationStats.ComputeStatus(app));
+    }
+
+    [Fact]
+    public void ComputeStatus_OfferAndWithdrawnBothSet_OfferTakesPrecedence()
+    {
+        var app = new Application { OfferedAt = DateTime.UtcNow, WithdrawnAt = DateTime.UtcNow };
+        Assert.Equal(ApplicationStatus.Offer, ApplicationStats.ComputeStatus(app));
     }
 }
