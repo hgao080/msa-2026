@@ -21,7 +21,7 @@ export function CloseSeason({ seasonId }: { seasonId: string }) {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-md rounded-xl border border-line bg-surface p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-xl border border-line bg-surface p-6" onClick={(e) => e.stopPropagation()}>
             <div className="mb-2 flex items-center justify-between">
               <h2 className="font-display text-lg font-semibold text-fg">Close this season</h2>
               <button onClick={() => setOpen(false)} aria-label="Close" className="text-fg-3 hover:text-fg">

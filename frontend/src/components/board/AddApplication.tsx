@@ -33,7 +33,7 @@ export function AddApplication({ seasonId }: { seasonId: string }) {
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-xl border border-line bg-surface p-6"
+            className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-xl border border-line bg-surface p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
