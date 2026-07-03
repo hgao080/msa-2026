@@ -165,6 +165,32 @@ Required by MSA 2026 Phase 2 assessment.
 
 ---
 
+## Session 7 — 2026-07-03 — Derive application status from stages
+
+**Prompts:**
+- "Currently a user has to add a stage and then update the application status. I think the experience would be nicer if we just allow adding stages to an application and have the application status be a display field that is automatically updated when adding stages. Plan out the necessary backend changes to support this"
+- "Can probably drop the 'Final' stage and I have a concern regarding the 'Offer' stage and it having statuses. Maybe offer being in the same bucket as withdrawn or applied makes sense"
+- "Happy for you to start implementing. Make Offer have the most precedence. Make an appropriately named branch and incremental commits as you make progress, staging all changes then running '/caveman:caveman-commit staged changes' to generate the commit message"
+- "commit and continue" (×3, after each incremental chunk)
+
+**Generated / decided:**
+- Branch `feature/derive-application-status-from-stages`.
+- Merged `StageType`/`ApplicationStatus` into one aligned enum set (`OA, PhoneScreen, Technical, Behavioural` as stages; `Applied, OA, PhoneScreen, Technical, Behavioural, Offer, Rejected, Withdrawn` as statuses). Dropped `Final` — Technical/Behavioural rounds cover it.
+- `Application` gets `OfferedAt`/`WithdrawnAt` (nullable timestamps) — Offer and Withdrawn are terminal flags, not stages, since neither has a real Upcoming/Completed/Failed lifecycle.
+- `ApplicationStage` gets `CreatedAt` to determine "latest stage" deterministically.
+- New `ApplicationStats.ComputeStatus(Application)`: Offer > Withdrawn > latest stage (Failed → Rejected) > Applied. Called from `AddStageAsync`/`UpdateStageAsync`/offer/withdraw endpoints — the manual status-sync step is gone.
+- Removed `PATCH /applications/{id}/status`; added `POST`/`DELETE` `.../offer` and `.../withdraw`.
+- Rewrote `DataSeeder` to build stages first and derive status via `ComputeStatus`, so seed data can't drift from the real derivation logic.
+- Migration `ConsolidateStagePipeline` (new columns only — reseed-on-every-startup means no real data to remap through the enum reshuffle).
+- Frontend: `StatusControl` swapped from a free-text status `<select>` to a read-only derived-status badge + Offer/Withdraw toggle buttons; `StageTimeline`'s stage-type picker drops `Final`; CSS status-ramp vars renamed (`--st-screening` → `--st-phonescreen`, `--st-final` → `--st-behavioural`).
+
+**Key design choices:**
+- Multiple ambiguous design points surfaced via `AskUserQuestion` before implementing (StageType↔ApplicationStatus mapping for `Behavioural`, and how terminal Offer/Rejected/Withdrawn statuses get set once the pipeline is derived) — this is what led to the Offer/Withdrawn-as-flags design instead of trying to cram them into the stage lifecycle.
+- Writing `ComputeStatus` tests before wiring it into the service caught two real bugs pre-merge: (1) `(ApplicationStatus)latest.Type` was an unsafe ordinal cast — `Applied` occupies ordinal 0 with no `StageType` counterpart, so every value was off by one (fixed with `Enum.Parse` by name); (2) `app.Stages.Add(stage)` alone didn't reliably mark the new `ApplicationStage` as `Added` in EF's change tracker, causing `SaveChanges` to emit an `UPDATE` against a nonexistent row (`DbUpdateConcurrencyException`) — fixed by adding through `db.ApplicationStages.Add(stage)` instead, relying on EF's relationship fixup to reflect it back into `app.Stages`.
+- Verified via a live smoke test (ran the API, seeded fresh, logged in as the demo user, exercised add-stage/offer/withdraw over HTTP) rather than trusting build+unit-tests alone — this is what surfaced the EF tracking bug above, which the unit tests (in-memory objects, no real `SaveChanges`) couldn't have caught.
+
+---
+
 ## How to Add Entries
 
 Each Claude Code session, append a new `## Session N` block with:
