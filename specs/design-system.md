@@ -1,10 +1,16 @@
 # Horme — Design System
 
-Design direction for the frontend, decided during the design-exploration session (2026-07-02).
+Design direction for the frontend, decided during the design-exploration session (2026-07-02)
+and implemented on branch `feat/frontend-horme` (merged to `main` 2026-07-03, closing #8 #9).
 Supersedes the placeholder styling in the Next.js scaffold. Not covered in `project-plan.md`.
 
-Mockups (reference, not shipped): `design-explorations/horme-identity.html` (chosen),
-`application-board.html` + `application-board-v2.html` (rejected explorations).
+**Status: shipped.** Board, application detail, seasons, and dashboard all run on this system.
+Auth pages (login/register) also rebranded. Mockups in `design-explorations/` are historical
+reference only — `horme-identity.html` was the chosen direction; `application-board.html` /
+`application-board-v2.html` were rejected explorations (cards, metaphor-driven directions).
+
+**Not yet renamed:** README and repo/package metadata still say "Roster" — tracked under #12
+(submission prep), not part of this design system.
 
 ## Identity
 
@@ -68,8 +74,16 @@ step is separable. Offer/Rejected/Withdrawn are semantic outliers.
 
 ## Application to pages
 
-- **NavBar:** Horme violet wordmark; active link uses accent + acute tick.
-- **Board (#8):** the ledger above + filter/sort toolbar (status, source, sort chips with acute active tick) + empty state.
-- **Application detail (#8):** fields + inline status control (uses ramp) + `StageTimeline` (vertical, dot = stage status).
-- **Dashboard (#9):** momentum curve hero + velocity stat readouts + conversion funnel (CSS bars) + activity heatmap + insight callout + milestone grid.
-- **Seasons (#8):** active + archived season cards; new-season form.
+- **NavBar** (`src/components/NavBar.tsx`): Horme violet wordmark; active link uses accent + acute tick.
+- **Board** (`src/app/(app)/board/`): server-rendered ledger with URL-param filter/sort (`BoardToolbar`), `AddApplication` modal, empty state.
+- **Application detail** (`src/app/(app)/applications/[id]/`): fields + inline `StatusControl` (uses ramp) + `EditApplication` modal + `StageTimeline` (vertical, dot = stage status, inline stage-status changes, add-stage form).
+- **Dashboard** (`src/app/(app)/dashboard/`): `MomentumCurve` hero, stat readouts, `ConversionFunnel` (CSS bars), `ActivityHeatmap`, `InsightCallout` (dismiss persists per-type in localStorage), `MilestoneList`.
+- **Seasons** (`src/app/(app)/seasons/`): active season card (live stats) + `CloseSeason` modal + archived cards (cached final stats); `seasons/new` restyled to tokens.
+- **Auth** (`src/app/(auth)/login`, `/register`): skewed HORME wordmark + gloss line, shared token styling.
+
+### Shared primitives
+
+- `lib/status.ts` — single source for `STATUS_COLOR` (ramp), `STATUS_LEVEL` (pipeline position), `STATUSES`/`SOURCES`.
+- `lib/date.ts` — `relativeAge`, `formatDate`.
+- `components/StatusBadge.tsx`, `components/PipelineTrack.tsx` — status dot/label and the 5-node pipeline signature.
+- `components/ui/Modal.tsx` — shared dialog: portals to `document.body` (so an animated/transformed ancestor like `.animate-launch` can't offset a `fixed` overlay), overlay itself scrolls (centers short content, top-anchors tall content up to `90dvh`), Esc-to-close, body scroll-lock. All three app modals (`AddApplication`, `EditApplication`, `CloseSeason`) build on it.
