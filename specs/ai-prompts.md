@@ -147,6 +147,24 @@ Required by MSA 2026 Phase 2 assessment.
 
 ---
 
+## Session 6 — 2026-07-03 — Demo user seeding on startup
+
+**Prompts:**
+- "I'd like the backend to seed and reset a dummy user into the db on backend start. The dummy user should contain all the information needed to populate the frontend well. Concerns I have about the feasibility of this approach is how to handle auth. What do you think?"
+
+**Generated / decided:**
+- `Data/DataSeeder.cs`: `SeedDemoUserAsync` wipes and reseeds a fixed-GUID demo user (`demo@roster.dev` / `demo1234`) on every startup — one active Season, 20 Applications spread across all statuses/sources with matching ApplicationStage progressions, DailyActivity rows (9-day streak + applied-date coverage for the heatmap), 5 unlocked UserMilestones.
+- Wired into `Program.cs` right after `db.Database.Migrate()`.
+- Verified end-to-end: built, ran with a clean SQLite db, logged in as demo user via `/api/auth/login`, confirmed `/api/seasons`, `/api/seasons/{id}/applications`, `/api/seasons/{id}/dashboard` all return populated, coherent data.
+
+**Key design choices:**
+- No auth bypass needed — dummy user gets a normal BCrypt password hash, logs in through the existing `/auth/login` flow like any real user. The "how to handle auth" concern turned out to be a non-issue.
+- Reset scope is narrow: only rows tied to the fixed demo `UserId` are deleted and reseeded; real users' data is never touched.
+- Runs in all environments (not gated to Development) — deliberate choice so the deployed demo (Railway) always has fresh, populated data for reviewers/graders.
+- Fixed hardcoded GUIDs for demo User/Season (pattern matches existing milestone seed GUIDs) — never `Guid.NewGuid()` in seed data, per CLAUDE.md.
+
+---
+
 ## How to Add Entries
 
 Each Claude Code session, append a new `## Session N` block with:
