@@ -210,7 +210,20 @@ Required by MSA 2026 Phase 2 assessment.
 
 ---
 
-## How to Add Entries
+## Session 9 — 2026-07-03 — Pipeline progress by furthest stage reached
+
+**Prompts:**
+- "I quite like the pipeline feature and think it would make sense to default order applications by how far they are into the pipeline. I think we should make it so that if there exists an OA or phone screen stage then progress to 2nd dot. If technical 3rd. If behavioural 4th dot. ... the only change is just making it based off what exists as opposed to most recent stage ... make a branch and begin work, committing at appropriate increments"
+
+**Generated / decided:**
+- Branch `feature/pipeline-progress-sort`.
+- Backend: `ApplicationStats.PipelineLevel(Application)` returns 1–5 from which stage *types* exist on the application (OA/PhoneScreen → 2, Technical → 3, Behavioural → 4, `OfferedAt` set → 5), independent of `ComputeStatus`'s most-recent-stage logic. New `"pipeline"` sort key in `ApplicationService.GetApplicationsAsync` (also the wildcard/default case); `"appliedDate"` split out as its own explicit case since it no longer owns the default branch.
+- Frontend: `lib/status.ts`'s `STATUS_LEVEL` (keyed off derived `status`) replaced with `pipelineLevel()`, mirroring the backend's furthest-stage-type logic directly off `app.stages`/`app.offeredAt`. `PipelineTrack` now takes `stages`/`offeredAt` instead of deriving level from `status`. Board page's default `sort` param changed from `appliedDate` to `pipeline`; `BoardToolbar`'s local default updated to match so no sort button is falsely highlighted as active.
+
+**Key design choices:**
+- Root cause: `Application.Status` is derived from the *most recently added* stage (session 7's `ComputeStatus`), so adding stages out of chronological order (e.g. a Technical round logged, then a follow-up OA added later) could make the pipeline dots regress. Pipeline-level is now computed independently of `status` — from the *set* of stage types present — so it only moves forward.
+- Left `ComputeStatus`/the status badge untouched — user asked specifically about the pipeline dots and sort order, not the status label itself.
+- Default sort order stays `desc` (furthest-along applications first), reusing the existing `order` param default rather than introducing a new one.
 
 Each Claude Code session, append a new `## Session N` block with:
 - Date
