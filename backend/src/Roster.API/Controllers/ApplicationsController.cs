@@ -94,7 +94,15 @@ public class ApplicationsController(ApplicationService applicationService) : App
     public async Task<IActionResult> UpdateStage(Guid id, Guid stageId, [FromBody] UpdateStageRequest request)
     {
         var stage = await applicationService.UpdateStageAsync(id, GetUserId(), stageId, request);
-        
+
         return Ok(stage);
+    }
+
+    [HttpDelete("applications/{id:guid}/stages/{stageId:guid}")]
+    public async Task<IActionResult> DeleteStage(Guid id, Guid stageId)
+    {
+        await applicationService.DeleteStageAsync(id, GetUserId(), stageId);
+
+        return NoContent();
     }
 }

@@ -19,7 +19,7 @@ public record UpdateApplicationRequest(
 );
 
 public record CreateStageRequest(string Type, DateTime? ScheduledDate);
-public record UpdateStageRequest(string? Status, DateTime? CompletedDate, string? Notes);
+public record UpdateStageRequest(string? Type, string? Status, DateTime? ScheduledDate, DateTime? CompletedDate, string? Notes);
 
 public record ApplicationDto(
     Guid Id,

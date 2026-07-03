@@ -219,8 +219,11 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
         var stage = app.Stages.FirstOrDefault(s => s.Id == stageId)
                     ?? throw new NotFoundException("Stage not found");
 
+        if (request.Type != null && Enum.TryParse<StageType>(request.Type, out var ty))
+            stage.Type = ty;
         if (request.Status != null && Enum.TryParse<StageStatus>(request.Status, out var st))
             stage.Status = st;
+        if (request.ScheduledDate.HasValue) stage.ScheduledDate = request.ScheduledDate;
         if (request.CompletedDate.HasValue) stage.CompletedDate = request.CompletedDate;
         if (request.Notes != null) stage.Notes = request.Notes;
         app.Status = ApplicationStats.ComputeStatus(app);
@@ -228,8 +231,25 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
         await LogActivity(userId);
         await db.SaveChangesAsync();
         await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
-        
+
         return ToStageDto(stage);
+    }
+
+    public async Task DeleteStageAsync(Guid appId, Guid userId, Guid stageId)
+    {
+        var app = await db.Applications
+                      .Include(a => a.Stages)
+                      .FirstOrDefaultAsync(a => a.Id == appId && a.UserId == userId)
+                  ?? throw new NotFoundException("Application not found");
+
+        var stage = app.Stages.FirstOrDefault(s => s.Id == stageId)
+                    ?? throw new NotFoundException("Stage not found");
+
+        db.ApplicationStages.Remove(stage);
+        app.Stages.Remove(stage);
+        app.Status = ApplicationStats.ComputeStatus(app);
+        app.LastUpdated = DateTime.UtcNow;
+        await db.SaveChangesAsync();
     }
 
     private static ApplicationDto ToDto(Application a) => new(
