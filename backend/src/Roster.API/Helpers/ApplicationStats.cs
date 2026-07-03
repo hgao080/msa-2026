@@ -15,6 +15,18 @@ public static class ApplicationStats
         return Enum.Parse<ApplicationStatus>(latest.Type.ToString());
     }
 
+    // furthest stage type reached, not most recent — matches how companies actually gate rounds
+    public static int PipelineLevel(Application app)
+    {
+        if (app.OfferedAt.HasValue) return 5;
+
+        var level = 1;
+        if (app.Stages.Any(s => s.Type is StageType.OA or StageType.PhoneScreen)) level = 2;
+        if (app.Stages.Any(s => s.Type == StageType.Technical)) level = 3;
+        if (app.Stages.Any(s => s.Type == StageType.Behavioural)) level = 4;
+        return level;
+    }
+
     public static double ResponseRate(IList<Application> apps)
     {
         if (apps.Count == 0) return 0;

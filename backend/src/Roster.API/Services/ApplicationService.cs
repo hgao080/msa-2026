@@ -41,8 +41,10 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
             ("company", true) => apps.OrderByDescending(a => a.Company).ToList(),
             ("lastUpdated", false) => apps.OrderBy(a => a.LastUpdated).ToList(),
             ("lastUpdated", true) => apps.OrderByDescending(a => a.LastUpdated).ToList(),
-            (_, false) => apps.OrderBy(a => a.AppliedDate).ToList(),
-            (_, true) => apps.OrderByDescending(a => a.AppliedDate).ToList(),
+            ("appliedDate", false) => apps.OrderBy(a => a.AppliedDate).ToList(),
+            ("appliedDate", true) => apps.OrderByDescending(a => a.AppliedDate).ToList(),
+            (_, false) => apps.OrderBy(a => ApplicationStats.PipelineLevel(a)).ToList(),
+            (_, true) => apps.OrderByDescending(a => ApplicationStats.PipelineLevel(a)).ToList(),
         };
 
         return apps.Select(ToDto).ToList();
