@@ -53,9 +53,12 @@ export const addStage = (id: string, data: { type: string; scheduledDate?: strin
 export const updateStage = (
   id: string,
   stageId: string,
-  data: { status?: string; completedDate?: string; notes?: string }
+  data: { type?: string; status?: string; scheduledDate?: string; completedDate?: string; notes?: string }
 ) =>
   apiFetch<ApplicationStage>(`/api/applications/${id}/stages/${stageId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
+
+export const deleteStage = (id: string, stageId: string) =>
+  apiFetch<void>(`/api/applications/${id}/stages/${stageId}`, { method: 'DELETE' })

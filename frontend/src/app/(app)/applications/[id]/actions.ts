@@ -5,6 +5,7 @@ import {
   updateApplication,
   addStage,
   updateStage,
+  deleteStage,
   offerApplication,
   unofferApplication,
   withdrawApplication,
@@ -97,4 +98,33 @@ export async function updateStageStatusAction(
     completedDate: status === 'Completed' ? new Date().toISOString() : undefined,
   })
   revalidatePath(`/applications/${appId}`)
+}
+
+export async function editStageAction(
+  appId: string,
+  stageId: string,
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const type = String(formData.get('type') ?? '')
+  if (!type) return { error: 'Pick a stage type.' }
+
+  try {
+    await updateStage(appId, stageId, {
+      type,
+      scheduledDate: String(formData.get('scheduledDate') ?? '') || undefined,
+      notes: String(formData.get('notes') ?? '') || undefined,
+    })
+  } catch {
+    return { error: 'Failed to update stage.' }
+  }
+
+  revalidatePath(`/applications/${appId}`)
+  return { ok: true }
+}
+
+export async function deleteStageAction(appId: string, stageId: string) {
+  await deleteStage(appId, stageId)
+  revalidatePath(`/applications/${appId}`)
+  revalidatePath('/board')
 }
