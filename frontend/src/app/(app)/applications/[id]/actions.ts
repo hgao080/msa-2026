@@ -1,16 +1,41 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { patchStatus, updateApplication, addStage, updateStage } from '@/lib/applications'
-import type { ApplicationStatus } from '@/types'
+import {
+  updateApplication,
+  addStage,
+  updateStage,
+  offerApplication,
+  unofferApplication,
+  withdrawApplication,
+  unwithdrawApplication,
+} from '@/lib/applications'
 
 export interface FormState {
   error?: string
   ok?: boolean
 }
 
-export async function patchStatusAction(id: string, status: ApplicationStatus) {
-  await patchStatus(id, status)
+export async function offerAction(id: string) {
+  await offerApplication(id)
+  revalidatePath(`/applications/${id}`)
+  revalidatePath('/board')
+}
+
+export async function unofferAction(id: string) {
+  await unofferApplication(id)
+  revalidatePath(`/applications/${id}`)
+  revalidatePath('/board')
+}
+
+export async function withdrawAction(id: string) {
+  await withdrawApplication(id)
+  revalidatePath(`/applications/${id}`)
+  revalidatePath('/board')
+}
+
+export async function unwithdrawAction(id: string) {
+  await unwithdrawApplication(id)
   revalidatePath(`/applications/${id}`)
   revalidatePath('/board')
 }

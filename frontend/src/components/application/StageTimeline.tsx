@@ -6,7 +6,7 @@ import type { ApplicationStage } from '@/types'
 import { addStageAction, updateStageStatusAction, type FormState } from '@/app/(app)/applications/[id]/actions'
 import { formatDate } from '@/lib/date'
 
-const STAGE_TYPES = ['OA', 'PhoneScreen', 'Technical', 'Behavioural', 'Final']
+const STAGE_TYPES = ['OA', 'PhoneScreen', 'Technical', 'Behavioural']
 const STAGE_STATUSES: ApplicationStage['status'][] = ['Upcoming', 'Completed', 'Failed']
 
 function dotStyle(status: ApplicationStage['status']) {

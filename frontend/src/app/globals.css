@@ -21,9 +21,9 @@
   /* status ramp — analogous violet arc; hues shared across themes */
   --st-applied: #6d8bff;
   --st-oa: #6b6bf5;
-  --st-screening: #8b5cf6;
+  --st-phonescreen: #8b5cf6;
   --st-technical: #b455e6;
-  --st-final: #d94fa6;
+  --st-behavioural: #d94fa6;
   --st-offer: var(--win);
   --st-rejected: var(--lose);
   --st-withdrawn: var(--neu);

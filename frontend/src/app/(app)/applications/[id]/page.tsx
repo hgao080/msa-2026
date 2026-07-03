@@ -31,7 +31,7 @@ export default async function ApplicationDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <StatusControl id={app.id} status={app.status} />
+          <StatusControl id={app.id} status={app.status} offeredAt={app.offeredAt} withdrawnAt={app.withdrawnAt} />
           <EditApplication app={app} />
         </div>
       </div>

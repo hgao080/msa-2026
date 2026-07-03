@@ -1,7 +1,7 @@
 import type { ApplicationStatus } from '@/types'
 
 export const STATUSES: ApplicationStatus[] = [
-  'Applied', 'OA', 'Screening', 'Technical', 'Final', 'Offer', 'Rejected', 'Withdrawn',
+  'Applied', 'OA', 'PhoneScreen', 'Technical', 'Behavioural', 'Offer', 'Rejected', 'Withdrawn',
 ]
 
 export const SOURCES = ['LinkedIn', 'Seek', 'Referral', 'CompanyWebsite', 'Other'] as const
@@ -10,21 +10,21 @@ export const SOURCES = ['LinkedIn', 'Seek', 'Referral', 'CompanyWebsite', 'Other
 export const STATUS_COLOR: Record<ApplicationStatus, string> = {
   Applied: 'var(--st-applied)',
   OA: 'var(--st-oa)',
-  Screening: 'var(--st-screening)',
+  PhoneScreen: 'var(--st-phonescreen)',
   Technical: 'var(--st-technical)',
-  Final: 'var(--st-final)',
+  Behavioural: 'var(--st-behavioural)',
   Offer: 'var(--st-offer)',
   Rejected: 'var(--st-rejected)',
   Withdrawn: 'var(--st-withdrawn)',
 }
 
-// position on the 5-node pipeline (Applied → Responded → Interview → Final → Offer)
+// position on the 5-node pipeline (Applied → Responded → Interview → Late round → Offer)
 export const STATUS_LEVEL: Record<ApplicationStatus, number> = {
   Applied: 1,
   OA: 2,
-  Screening: 2,
+  PhoneScreen: 2,
   Technical: 3,
-  Final: 4,
+  Behavioural: 4,
   Offer: 5,
   Rejected: 2,
   Withdrawn: 1,

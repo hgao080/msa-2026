@@ -33,15 +33,17 @@ export interface Application {
   lastUpdated: string
   referrerName?: string
   notes?: string
+  offeredAt?: string
+  withdrawnAt?: string
   stages: ApplicationStage[]
 }
 
 export type ApplicationStatus =
   | 'Applied'
   | 'OA'
-  | 'Screening'
+  | 'PhoneScreen'
   | 'Technical'
-  | 'Final'
+  | 'Behavioural'
   | 'Offer'
   | 'Rejected'
   | 'Withdrawn'
@@ -49,7 +51,7 @@ export type ApplicationStatus =
 export interface ApplicationStage {
   id: string
   applicationId: string
-  type: 'OA' | 'PhoneScreen' | 'Technical' | 'Behavioural' | 'Final'
+  type: 'OA' | 'PhoneScreen' | 'Technical' | 'Behavioural'
   status: 'Upcoming' | 'Completed' | 'Failed'
   scheduledDate?: string
   completedDate?: string

@@ -32,11 +32,17 @@ export const updateApplication = (
 export const deleteApplication = (id: string) =>
   apiFetch<void>(`/api/applications/${id}`, { method: 'DELETE' })
 
-export const patchStatus = (id: string, status: ApplicationStatus) =>
-  apiFetch<Application>(`/api/applications/${id}/status`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status }),
-  })
+export const offerApplication = (id: string) =>
+  apiFetch<Application>(`/api/applications/${id}/offer`, { method: 'POST' })
+
+export const unofferApplication = (id: string) =>
+  apiFetch<Application>(`/api/applications/${id}/offer`, { method: 'DELETE' })
+
+export const withdrawApplication = (id: string) =>
+  apiFetch<Application>(`/api/applications/${id}/withdraw`, { method: 'POST' })
+
+export const unwithdrawApplication = (id: string) =>
+  apiFetch<Application>(`/api/applications/${id}/withdraw`, { method: 'DELETE' })
 
 export const addStage = (id: string, data: { type: string; scheduledDate?: string }) =>
   apiFetch<ApplicationStage>(`/api/applications/${id}/stages`, {
