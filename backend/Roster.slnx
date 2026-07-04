@@ -1,8 +1,4 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Roster.API/Roster.API.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Roster.Tests/Roster.Tests.csproj" />
-  </Folder>
+  <Project Path="Roster.API/Roster.API.csproj" />
+  <Project Path="Roster.Tests/Roster.Tests.csproj" />
 </Solution>

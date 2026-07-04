@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Roster.API\Roster.API.csproj" />
+    <ProjectReference Include="..\Roster.API\Roster.API.csproj" />
   </ItemGroup>
 
 </Project>
