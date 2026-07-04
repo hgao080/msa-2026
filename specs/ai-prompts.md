@@ -225,6 +225,23 @@ Required by MSA 2026 Phase 2 assessment.
 - Left `ComputeStatus`/the status badge untouched — user asked specifically about the pipeline dots and sort order, not the status label itself.
 - Default sort order stays `desc` (furthest-along applications first), reusing the existing `order` param default rather than introducing a new one.
 
+## Session 10 — 2026-07-04 — Flatten backend project structure
+
+**Prompts:**
+- "I want to fix my backend folder, project and solution structure. I am a bit lost as to when to use projects vs folders and what are the tradeoffs for each ... if continuing this way, I would like to lose the src and tests folder as they are essentially meaningless just holding a project in each. What is your recommendation?"
+- "branch and go ahead. Remove stale files and make incremental commits as you go by staging changed files and calling caveman commit on those staged changes to generate the commit msg"
+- "Update any stale docs and anything necessary to update in specs/"
+
+**Generated / decided:**
+- Branch `restructure/flatten-backend-projects`.
+- Moved `backend/src/Roster.API` → `backend/Roster.API` and `backend/tests/Roster.Tests` → `backend/Roster.Tests` via `git mv` (history preserved); updated `Roster.slnx` project paths and `Roster.Tests.csproj`'s `ProjectReference` (`..\..\src\Roster.API\` → `..\Roster.API\`).
+- `dotnet build Roster.slnx` verified green post-move.
+- `specs/project-plan.md`'s repo-structure diagram updated to match (was still showing the `src/tests` wrapper); `specs/HANDOFF.md` already showed the flat layout, so no change needed there.
+
+**Key design choices:**
+- Recommended single-project-with-folders over per-layer projects (Domain/Application/Infrastructure/API as separate `.csproj`): layered projects buy compiler-enforced dependency direction and independent build/versioning, which pays off for multi-team/swap-infra scenarios — not a solo MSA assessment project with one API + one test project. Folders (Controllers/Services/Models/DTOs) give the same readability without the ceremony.
+- `src`/`tests` wrapper directories added a nesting level with no build or organizational value (each held exactly one project) — flattened to `backend/Roster.API`, `backend/Roster.Tests`.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)

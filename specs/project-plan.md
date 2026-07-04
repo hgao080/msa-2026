@@ -99,8 +99,8 @@ Dashboard recomputes live for the active season. On close, final stats (applicat
 ```
 msa-2026/
 ├── backend/
-│   ├── src/Roster.API/          # ASP.NET Core Web API
-│   └── tests/Roster.Tests/      # xUnit tests
+│   ├── Roster.API/              # ASP.NET Core Web API
+│   └── Roster.Tests/            # xUnit tests
 ├── frontend/                    # React + Vite SPA
 ├── specs/                       # MSA required: AI usage, planning docs
 │   ├── project-plan.md          # This file
