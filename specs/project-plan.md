@@ -1,4 +1,4 @@
-# Roster — Project Plan
+# Horme — Project Plan
 
 ## What It Is
 
@@ -36,7 +36,7 @@ JWT fits this architecture because:
 - No additional infrastructure (Redis, session table) needed alongside SQLite/Azure SQL
 - RBAC check is free — middleware reads the role claim, no DB round trip
 
-**Tradeoff:** Token revocation is impossible without a denylist (which reintroduces statefulness). Logout discards the client-side token but the token remains cryptographically valid until expiry (24 hours). Acceptable for Roster — no financial data, and the attack surface for stolen tokens is low. For banking or healthcare this would require short-lived tokens with refresh token rotation or a server-side denylist.
+**Tradeoff:** Token revocation is impossible without a denylist (which reintroduces statefulness). Logout discards the client-side token but the token remains cryptographically valid until expiry (24 hours). Acceptable for Horme — no financial data, and the attack surface for stolen tokens is low. For banking or healthcare this would require short-lived tokens with refresh token rotation or a server-side denylist.
 
 ### BCrypt over ASP.NET Core Identity
 
@@ -99,8 +99,8 @@ Dashboard recomputes live for the active season. On close, final stats (applicat
 ```
 msa-2026/
 ├── backend/
-│   ├── Roster.API/              # ASP.NET Core Web API
-│   └── Roster.Tests/            # xUnit tests
+│   ├── Horme.API/              # ASP.NET Core Web API
+│   └── Horme.Tests/            # xUnit tests
 ├── frontend/                    # React + Vite SPA
 ├── specs/                       # MSA required: AI usage, planning docs
 │   ├── project-plan.md          # This file

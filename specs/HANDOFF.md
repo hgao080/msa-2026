@@ -1,8 +1,8 @@
-# Roster — Claude Code Handoff
+# Horme — Claude Code Handoff
 
 ## What You're Building
 
-Roster is a season-based job application tracker with light gamification mechanics for the Microsoft Student Accelerator 2026 Phase 2 Software Stream assessment. The theme is **Gamification**.
+Horme is a season-based job application tracker with light gamification mechanics for the Microsoft Student Accelerator 2026 Phase 2 Software Stream assessment. The theme is **Gamification**.
 
 A job hunt is a finite campaign, not an ongoing spreadsheet. Users create a **season**, track applications through it, and close it when they land something or take a break. Closed seasons archive with final stats — a permanent record of that hunt.
 
@@ -80,7 +80,7 @@ Single repo — MSA requires one GitHub link containing both frontend and backen
 ```
 roster/
 ├── backend/
-│   ├── Roster.API/
+│   ├── Horme.API/
 │   │   ├── Controllers/
 │   │   │   ├── AuthController.cs
 │   │   │   ├── SeasonsController.cs
@@ -104,14 +104,14 @@ roster/
 │   │   ├── appsettings.json
 │   │   ├── appsettings.Development.json
 │   │   └── Program.cs
-│   ├── Roster.Tests/
+│   ├── Horme.Tests/
 │   │   ├── Services/
 │   │   │   ├── AuthServiceTests.cs
 │   │   │   ├── ApplicationServiceTests.cs
 │   │   │   ├── InsightServiceTests.cs
 │   │   │   └── MilestoneServiceTests.cs
-│   │   └── Roster.Tests.csproj
-│   └── Roster.sln
+│   │   └── Horme.Tests.csproj
+│   └── Horme.sln
 ├── frontend/
 │   ├── src/
 │   │   ├── api/
@@ -824,7 +824,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapOpenApi();
-app.MapScalarApiReference(opts => opts.Title = "Roster API");
+app.MapScalarApiReference(opts => opts.Title = "Horme API");
 
 // Apply migrations on startup
 using (var scope = app.Services.CreateScope())
@@ -893,7 +893,7 @@ public async Task<IActionResult> GetStats() { ... }
 ## Scalar Setup
 
 ```xml
-<!-- Roster.API.csproj -->
+<!-- Horme.API.csproj -->
 <PackageReference Include="Scalar.AspNetCore" Version="1.*" />
 ```
 
@@ -1175,8 +1175,8 @@ export function ThemeToggle() {
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 COPY backend/ .
-RUN dotnet restore Roster.sln
-RUN dotnet publish Roster.API/Roster.API.csproj -c Release -o /out
+RUN dotnet restore Horme.sln
+RUN dotnet publish Horme.API/Horme.API.csproj -c Release -o /out
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
@@ -1184,7 +1184,7 @@ COPY --from=build /out .
 VOLUME /app/data
 ENV ASPNETCORE_URLS=http://+:5000
 EXPOSE 5000
-ENTRYPOINT ["dotnet", "Roster.API.dll"]
+ENTRYPOINT ["dotnet", "Horme.API.dll"]
 ```
 
 ```dockerfile
@@ -1238,7 +1238,7 @@ volumes:
 ## Build Order
 
 ### Phase 1 — Backend foundation
-1. `dotnet new sln -n Roster` → add API and Tests projects
+1. `dotnet new sln -n Horme` → add API and Tests projects
 2. Add all NuGet packages (EF Core + SQLite, BCrypt, JWT, Scalar, Rate Limiting)
 3. Define all entities → create `AppDbContext` with milestone seeds
 4. `dotnet ef migrations add InitialCreate` → `dotnet ef database update`

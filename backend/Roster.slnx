@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="Roster.API/Roster.API.csproj" />
-  <Project Path="Roster.Tests/Roster.Tests.csproj" />
-</Solution>

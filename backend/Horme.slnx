@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Horme.API/Horme.API.csproj" />
+  <Project Path="Horme.Tests/Horme.Tests.csproj" />
+</Solution>
