@@ -10,7 +10,7 @@ export function ApplicationRow({ app }: { app: Application }) {
   return (
     <Link
       href={`/applications/${app.id}`}
-      className="grid grid-cols-[4px_1.6fr_120px_150px_110px_56px] items-center gap-3.5 border-b border-line px-4 py-3 transition-transform last:border-b-0 hover:translate-x-1.5 hover:bg-[var(--row-hi)] focus-visible:outline-2 focus-visible:outline-accent max-[640px]:grid-cols-[4px_1fr_auto] max-[640px]:gap-x-3"
+      className="grid grid-cols-[4px_1.3fr_120px_150px_110px_120px] items-center gap-3.5 border-b border-line px-4 py-3 transition-transform last:border-b-0 hover:translate-x-1.5 hover:bg-[var(--row-hi)] focus-visible:outline-2 focus-visible:outline-accent max-[640px]:grid-cols-[4px_1fr_auto] max-[640px]:gap-x-3"
       style={{ ['--st' as string]: STATUS_COLOR[app.status] }}
     >
       <span
@@ -33,7 +33,8 @@ export function ApplicationRow({ app }: { app: Application }) {
         {app.status}
       </span>
       <span className="text-right text-xs tabular-nums text-fg-3 max-[640px]:justify-self-end">
-        {relativeAge(app.appliedDate)}
+        <span className="block">{relativeAge(app.appliedDate)}</span>
+        <span className="block text-[10px] text-fg-3/70">upd {relativeAge(app.lastUpdated)}</span>
       </span>
     </Link>
   )
