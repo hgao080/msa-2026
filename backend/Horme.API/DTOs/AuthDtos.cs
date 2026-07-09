@@ -5,8 +5,7 @@ public record LoginRequest(string Email, string Password);
 public record AuthResponse(string Token, UserDto User);
 
 public record UserDto(
-    Guid Id, 
-    string Email, 
-    string Username, 
-    string Role
+    Guid Id,
+    string Email,
+    string Username
 );

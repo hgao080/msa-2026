@@ -85,8 +85,7 @@ roster/
 │   │   │   ├── AuthController.cs
 │   │   │   ├── SeasonsController.cs
 │   │   │   ├── ApplicationsController.cs
-│   │   │   ├── DashboardController.cs
-│   │   │   └── AdminController.cs
+│   │   │   └── DashboardController.cs
 │   │   ├── Models/                  # EF Core entities
 │   │   ├── DTOs/                    # Request/response shapes (never expose entities directly)
 │   │   ├── Services/
@@ -173,7 +172,6 @@ public class User
     public string Email { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
-    public string Role { get; set; } = "User"; // "User" | "Admin"
     public DateTime CreatedAt { get; set; }
 
     public ICollection<Season> Seasons { get; set; } = [];
@@ -445,13 +443,6 @@ Returns: {
 GET /api/seasons/{id}/insights
 Returns: Insight[]
 // Insight: { type: string, message: string, priority: number }
-```
-
-### Admin (RBAC — Admin role only)
-
-```
-GET /api/admin/stats
-Returns: { totalUsers, totalSeasons, totalApplications, avgApplicationsPerSeason }
 ```
 
 ---
@@ -778,7 +769,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build(); // All routes require auth by default
@@ -881,13 +871,6 @@ public async Task<IActionResult> Login(LoginRequest request) { ... }
 public async Task<IActionResult> Register(RegisterRequest request) { ... }
 ```
 
-### RBAC Example
-```csharp
-[Authorize(Policy = "AdminOnly")]
-[HttpGet("api/admin/stats")]
-public async Task<IActionResult> GetStats() { ... }
-```
-
 ---
 
 ## Scalar Setup
@@ -911,7 +894,6 @@ export interface User {
   id: string
   email: string
   username: string
-  role: 'User' | 'Admin'
 }
 
 export interface Season {
@@ -1252,8 +1234,7 @@ volumes:
 10. `InsightService` (all insight rules)
 11. `MilestoneService` (check and unlock)
 12. `DashboardController` (single endpoint assembling all above)
-13. `AdminController` with `[Authorize(Policy = "AdminOnly")]`
-14. `ExceptionMiddleware` (global error handling → consistent error response shape)
+13. `ExceptionMiddleware` (global error handling → consistent error response shape)
 15. xUnit tests: `AuthServiceTests`, `ApplicationServiceTests`, `InsightServiceTests`, `MilestoneServiceTests`
 16. Configure `Program.cs` in full (CORS, rate limiting, fallback auth policy, Scalar, migration on startup)
 

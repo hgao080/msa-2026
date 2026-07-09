@@ -31,7 +31,6 @@ public static class DataSeeder
             Email = DemoEmail,
             Username = "demo",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(DemoPassword, workFactor: 12),
-            Role = "User",
             CreatedAt = DateTime.UtcNow.AddDays(-45)
         };
         db.Users.Add(user);

@@ -335,6 +335,24 @@ Required by MSA 2026 Phase 2 assessment.
 - `ActivityHeatmap`'s weekday-padding test computes the expected lead-cell count via the same `new Date(date).getDay()` call the component uses, rather than hardcoding a day-of-week, to avoid timezone-dependent flakiness across machines.
 - `StatusControl` mocks the `'use server'` actions module entirely (`vi.mock('@/app/(app)/applications/[id]/actions')`) rather than letting clicks reach real `apiFetch` calls.
 
+## Session 15 — 2026-07-10 — Dashboard audit + Admin/RBAC removal
+
+**Prompts:**
+- "Currently what does the frontend dashboard show and what does the backend services supporting this functionality provide? Is it all being utilized?"
+- "Remove admin entirely. Not needed. Update and specs or your memory as needed. After doing so audit your memory against the current codebase and update anything relevant"
+
+**Generated / decided:**
+- Audited dashboard: frontend renders stat tiles (totalApplications, weeklyProgress/Target, currentStreak, responseRate), InsightCallout (topInsight only), client-computed MomentumCurve, ActivityHeatmap, ConversionFunnel, MilestoneList. Backend `DashboardDto` also returns `totalInterviews`, `longestStreak`, and `personalBests` — all computed server-side but never rendered. `/api/seasons/{id}/insights` (full insight list) and `/api/admin/stats` were fully unused end-to-end.
+- Flagged that `AdminController`/`AdminOnly` policy was the only place the graded "RBAC (Admin/User roles)" advanced requirement was exercised before deleting it — user chose to drop RBAC as a chosen advanced requirement rather than keep or wire it up.
+- Removed entirely: `AdminController.cs`, `AdminStatsDto`, `AdminOnly` authorization policy, `User.Role` column (new EF migration `RemoveUserRole`), `Role` JWT claim, `UserDto.Role`, frontend `User.role` type field.
+- Backend build + `dotnet test` (63/63) and frontend `tsc --noEmit` + `vitest run` (49/49) all pass post-removal.
+- Updated `specs/project-plan.md` (Advanced Requirements list, JWT rationale) and `specs/HANDOFF.md` (repo tree, entity model, endpoint spec, RBAC example, Program.cs snippet, build order, frontend `User` type) to drop Admin/RBAC references.
+- Left `totalInterviews`/`longestStreak`/`personalBests` stat fields and the `/insights` endpoint as known-unused-but-not-removed (out of scope for this session — only admin removal was requested).
+
+**Key design choices:**
+- Regenerated the EF migration via `dotnet ef migrations add` rather than hand-editing the existing `InitialCreate` migration/snapshot, since no local DB file existed yet to make in-place editing safe, and hand-editing designer/snapshot files by hand risked missing a spot (User.Role vs Application.Role share the property name).
+- Had to stop a running `Horme.API.exe` dev server (locked build output) before the build/migration would succeed — confirmed with the user before killing the process.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)

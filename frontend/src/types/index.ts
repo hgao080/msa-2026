@@ -2,7 +2,6 @@ export interface User {
   id: string
   email: string
   username: string
-  role: 'User' | 'Admin'
 }
 
 export interface Season {

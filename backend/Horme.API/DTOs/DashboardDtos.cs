@@ -30,5 +30,3 @@ public record HeatmapDayDto(string Date, bool Active);
 
 public record MilestoneDto(Guid Id, string Slug, string Name, string Description);
 public record MilestoneStatusDto(MilestoneDto Milestone, string? UnlockedAt);
-
-public record AdminStatsDto(int TotalUsers, int TotalSeasons, int TotalApplications, double AvgApplicationsPerSeason);

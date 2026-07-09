@@ -29,7 +29,7 @@ This is a React SPA talking to a separate ASP.NET Core API (different origin). T
 
 **Session-based:** Server stores a session record in DB. Every request looks it up by session ID cookie. Straightforward for monoliths where server and browser share the same origin — cookie `SameSite` and CSRF handling work naturally. Requires a shared session store (Redis or DB table) to survive server restarts.
 
-**JWT (chosen):** Server signs a token on login. Client stores it and sends it as `Authorization: Bearer <token>` on every request. Server validates the signature mathematically — no DB lookup per request, no session storage. Role claim (`ClaimTypes.Role`) is embedded in the token itself, so `[Authorize(Policy = "AdminOnly")]` never touches the database.
+**JWT (chosen):** Server signs a token on login. Client stores it and sends it as `Authorization: Bearer <token>` on every request. Server validates the signature mathematically — no DB lookup per request, no session storage.
 
 JWT fits this architecture because:
 - `Authorization: Bearer` headers work cleanly across origins without CORS cookie complexity
@@ -88,7 +88,7 @@ Dashboard recomputes live for the active season. On close, final stats (applicat
 
 ## Advanced Requirements (exactly 3 chosen)
 
-1. **Security measures** — RBAC (Admin/User roles via JWT claims), BCrypt password hashing (workFactor 12), rate limiting on auth endpoints (5 req/min fixed window). README must include security writeup.
+1. **Security measures** — BCrypt password hashing (workFactor 12), rate limiting on auth endpoints (5 req/min fixed window). README must include security writeup.
 2. **State management** — Zustand stores: `authStore` (persisted), `seasonStore`, `applicationStore`.
 3. **Dark/light mode** — Tailwind `darkMode: 'class'`, toggled via `ThemeToggle` component, persisted to localStorage.
 
@@ -126,7 +126,7 @@ msa-2026/
 8. DashboardService (streak, funnel, heatmap, personal bests)
 9. InsightService (6 insight rules)
 10. MilestoneService (check and unlock)
-11. DashboardController + AdminController
+11. DashboardController
 12. ExceptionMiddleware (global error handling)
 13. xUnit tests (AuthService, ApplicationService, InsightService, MilestoneService)
 14. Program.cs final config (CORS, rate limiting, fallback auth policy, Scalar, auto-migrate)

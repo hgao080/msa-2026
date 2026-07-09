@@ -61,8 +61,7 @@ public class AuthService(AppDbContext db, IConfiguration config)
             audience: config["Jwt:Audience"],
             claims: [
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Email, user.Email)
             ],
             expires: DateTime.UtcNow.AddMinutes(expiry),
             signingCredentials: creds
@@ -71,5 +70,5 @@ public class AuthService(AppDbContext db, IConfiguration config)
     }
 
     private static UserDto ToDto(User user) =>
-        new(user.Id, user.Email, user.Username, user.Role);
+        new(user.Id, user.Email, user.Username);
 }
