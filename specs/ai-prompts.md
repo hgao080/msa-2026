@@ -274,6 +274,26 @@ Required by MSA 2026 Phase 2 assessment.
 - Migration regeneration (delete + recreate) chosen over hand-patching the old Sqlite migration files — provider-specific column types differ enough that hand-editing risked drifting from the actual current entity model.
 - Azure SQL provisioning itself (real Azure resource, prod connection string wiring) is still outstanding — only the local dev + provider-swap side is done this session.
 
+## Session 12 — 2026-07-10 — Board sort/search rework, row polish, Roster-copy cleanup
+
+**Prompts:**
+- "Make the sort by stage an option on the frontend. Remove sort by company option. Rename \"Applied\" sort to match text displayed of \"Age\" on rows themselves. Add a seach by company name instead of the sort."
+- "Make the cards also display an updated date as well as age if keeping updated as a sort"
+- "Currently all the other column headers for the table are displayed on a single line except for AGE / UPDATED where it wraps. Fix this by decreasing the column size of the COMPANY / ROLE column"
+- "Remoive all references on the frontend to the old applicaiton of Roster. The 2 I can notice currently are naming of \"Seasons\" and text of x in play. Happy to just name the Seasons something simple like Searches instead and remove the in play and have something simple like x applications. Happy to take suggestions as well"
+- "Log into specs\"
+
+**Generated / decided:**
+- `BoardToolbar.tsx`: sort options now `pipeline` ("Stage" — exposes the existing default pipeline-level ordering explicitly), `appliedDate` (relabeled "Age" to match the row column header), `lastUpdated` ("Updated"). Removed the `company` sort button entirely; replaced it with a debounced (300ms) free-text company search input wired to a new `company` query param.
+- Backend: `ApplicationsController` + `ApplicationService.GetApplicationsAsync` gained an optional `company` query param, filtering `Company.Contains(company)` (SQL Server default collation is case-insensitive, no `.ToLower()` needed).
+- `ApplicationRow.tsx`: Age column now stacks the applied-date age above a smaller muted `upd {relativeAge(lastUpdated)}` line, since Updated is still a live sort option and needs a visible field to sort against.
+- Column widths retuned so the widened "Age / Updated" header (76px → 120px) stops wrapping: `Company / Role` narrowed `1.6fr` → `1.3fr` in both the header grid (`board/page.tsx`) and row grid (`ApplicationRow.tsx`) — the two must stay in sync since they're separate elements, not a shared `<table>`.
+- Board header's vague "`{n} in play`" replaced with "`{n} application(s)`" (singular-safe).
+
+**Key design choices:**
+- Asked before renaming "Season" — user's Roster-cleanup request assumed it was old-app leftover naming, but `specs/project-plan.md` documents Season as the deliberate core gamification concept (bounded hunt, closes with frozen stats). Presented three options (leave it / frontend-copy-only rename / full end-to-end rename); user chose to leave "Season" untouched and scope the cleanup to just the "in play" text. Grepped the whole frontend for literal "roster" afterward — no other leftovers found.
+- Company sort was redundant with the visible Company/Role column (sorting doesn't help you *find* one, searching does) — replacing it with search rather than keeping both was the user's call, not an addition beyond scope.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)
