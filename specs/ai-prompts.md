@@ -242,6 +242,38 @@ Required by MSA 2026 Phase 2 assessment.
 - Recommended single-project-with-folders over per-layer projects (Domain/Application/Infrastructure/API as separate `.csproj`): layered projects buy compiler-enforced dependency direction and independent build/versioning, which pays off for multi-team/swap-infra scenarios — not a solo MSA assessment project with one API + one test project. Folders (Controllers/Services/Models/DTOs) give the same readability without the ceremony.
 - `src`/`tests` wrapper directories added a nesting level with no build or organizational value (each held exactly one project) — flattened to `backend/Roster.API`, `backend/Roster.Tests`.
 
+## Session 11 — 2026-07-10 — Swap SQLite for SQL Server (LocalDB local / Azure SQL prod)
+
+**Prompts:**
+- "I want to transition the backend off of SQLite and to Azure SQL. What steps will need to be done to do so"
+- "I want local SQL Server/LocalDB with Azure SQL only in prod. What do I need to setup locally on my machine?"
+- "Is Local DB the suggested local development approach? Could you explore this article and summarise it for me and its relevance to our current situation: https://learn.microsoft.com/en-us/azure/azure-sql/database/local-dev-experience-overview?view=azuresql"
+- "Is this only usable through the extension?"
+- "From what I read this seems to the more modern and recommended approach as such I would like to learn how to adopt it. Can you begin teaching me what Dev Container Templates are?"
+- "Can you explain SQL Database Projects to me"
+- "Can you explain to me what migrations are and why they are necessary"
+- "I have installed SQL Server 2025. Is this correct and what do you need from me to complete the swap from SQLite to SQL Server / Azure SQL"
+- "How did you create the SQL Server database?"
+- "Difference between SQLEXPRESS and LOCALDB"
+- "I want to use LocalDB instead"
+- "localdb should be installed now"
+- "Could you just move the MSSQLLocalDB string into the default appsettings.json and delete Development.json. This string should be safe to push to git"
+- "Log this session into specs/"
+
+**Generated / decided:**
+- Swapped EF Core provider Sqlite → SqlServer: `Horme.API.csproj` package reference, `Program.cs` `UseSqlite` → `UseSqlServer`.
+- Deleted the two Sqlite-typed migrations (`InitialCreate`, `ConsolidateStagePipeline` — hardcoded `type: "TEXT"` columns incompatible with SQL Server) and regenerated a single fresh `InitialCreate` migration against the SqlServer provider (`uniqueidentifier`, `datetime2`, `nvarchar` types); milestone seed GUIDs preserved as hardcoded `Guid.Parse(...)` per CLAUDE.md rule.
+- Explored Microsoft Learn's Azure SQL local-dev docs (local-dev-experience-overview, local-dev-experience-dev-containers) — evaluated Dev Container Templates + SQL Database Projects as the "modern" MS-recommended path, then explicitly decided against adopting either: Dev Containers add a Docker dependency with no benefit for solo local dev, and SQL Database Projects is a schema-first/declarative model incompatible with the repo's existing EF Core code-first migrations — rework not justified for MSA assessment scope. EF Core migrations stay as the schema mechanism.
+- Local DB target churned through two options before settling: installed SQL Server 2025 Express (`SQLEXPRESS` instance) first, applied migration there; then installed LocalDB (`MSSQLLocalDB`) per user preference, re-pointed connection string, reapplied migration; dropped the now-orphaned `Horme` DB from the SQLEXPRESS instance via `Invoke-Sqlcmd` (SQLPS module) to avoid leaving stale state.
+- Consolidated config: connection string moved out of a separate `appsettings.Development.json` into base `appsettings.json` and the Development file deleted — LocalDB's `Trusted_Connection=True` string has no embedded secret, safe to commit.
+- Verified with `dotnet build` + `dotnet test` (19/19 pass) after every change.
+
+**Key design choices:**
+- Prod (Azure SQL) connection string is still never committed — the LocalDB string now sitting in `appsettings.json` only works locally; production must override it via `ConnectionStrings__DefaultConnection` env var / App Service config at deploy time, per CLAUDE.md's JWT-key-placeholder convention.
+- Chose LocalDB over SQLEXPRESS as final local dev target: on-demand spin-up per session (no persistent background Windows service), lighter footprint, matches the standard EF Core dev pattern more closely than a full Express instance.
+- Migration regeneration (delete + recreate) chosen over hand-patching the old Sqlite migration files — provider-specific column types differ enough that hand-editing risked drifting from the actual current entity model.
+- Azure SQL provisioning itself (real Azure resource, prod connection string wiring) is still outstanding — only the local dev + provider-swap side is done this session.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)
