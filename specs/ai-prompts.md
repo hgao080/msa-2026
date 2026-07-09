@@ -294,6 +294,47 @@ Required by MSA 2026 Phase 2 assessment.
 - Asked before renaming "Season" — user's Roster-cleanup request assumed it was old-app leftover naming, but `specs/project-plan.md` documents Season as the deliberate core gamification concept (bounded hunt, closes with frozen stats). Presented three options (leave it / frontend-copy-only rename / full end-to-end rename); user chose to leave "Season" untouched and scope the cleanup to just the "in play" text. Grepped the whole frontend for literal "roster" afterward — no other leftovers found.
 - Company sort was redundant with the visible Company/Role column (sorting doesn't help you *find* one, searching does) — replacing it with search rather than keeping both was the user's call, not an addition beyond scope.
 
+## Session 13 — 2026-07-10 — Backend service test coverage
+
+**Prompts:**
+- "Part of the Backend requirements is to: Implement uni tests covering key backend components and functionality. Currently what tests are there are what should I be writing tests for?"
+- "Write tests for all services and rename and delete stale items as appropriate"
+- "Log session into specs\"
+
+**Generated / decided:**
+- Audited `Horme.Tests`: only `AuthServiceTests.cs` and a misnamed `DashboardServiceTests.cs` (actually testing the static `ApplicationStats` helper + `DashboardService.CalculateFunnel`) existed. `ApplicationService`, `MilestoneService`, `SeasonService`, `DashboardService.GetDashboardAsync`, and `InsightService` had zero coverage.
+- Deleted `backend/tests/Roster.Tests` — dead pre-rename leftover, only `bin`/`obj` build artifacts, no source, not referenced in `Horme.slnx`.
+- `git mv`'d the misnamed file to `ApplicationStatsTests.cs` to match its actual class.
+- Added `ApplicationServiceTests.cs` (CRUD, cross-user 404 scoping, stage lifecycle, offer/withdraw transitions, sort/filter, bad-enum → `BadRequestException`), `MilestoneServiceTests.cs` (per-slug unlock conditions, no double-unlock), `SeasonServiceTests.cs` (CRUD, close-season stat snapshot, double-close guard), a rewritten `DashboardServiceTests.cs` covering the full `GetDashboardAsync` (stats aggregation, heatmap range, milestone status mapping — not just the static helper), and `InsightServiceTests.cs` (each rule condition + priority ordering).
+- All 63 tests pass (`dotnet test Horme.Tests/Horme.Tests.csproj`).
+
+**Key design choices:**
+- EF Core's `HasData` milestone seed (`AppDbContext.OnModelCreating`) only populates the InMemory provider's database after an explicit `db.Database.EnsureCreated()` call — added to the `MilestoneServiceTests`/`DashboardServiceTests` DB helpers after tests initially failed with an empty `Milestones` table.
+- `InsightService`'s no-data test omits seeding a `Season` row entirely (rather than seeding one with default `WeeklyTarget`), since the day-of-week-gated `weekly-behind`/`weekly-target-hit` rules only short-circuit cleanly when the season lookup itself returns null — seeding a season made the "no insights" assertion flaky depending on real-clock day-of-week.
+- A running `dotnet run` dev server (PID 7252) had `Horme.API.exe` file-locked, blocking the test build; killed after explicit user confirmation since it's a destructive-adjacent action outside the "run tests" scope.
+
+## Session 14 — 2026-07-10 — Frontend unit test coverage
+
+**Prompts:**
+- "Part of the Frontend requirements is to: Implement unit tests covering key frontend components and functionality. Currently what tests are there and what should I be writing tests for?"
+- "What should actually be tested in frontend?"
+- "Setup Vitest config and begin working through all tiers starting with highest priority. Once done with a tier generate a commit message by staging all changes except for changes under specs\ and running \"/caveman:caveman-commit staged changes\" to generate the commit message to use"
+- "Log session into specs\"
+
+**Generated / decided:**
+- Audited frontend: zero tests existed, Vitest not installed despite `package.json`/HANDOFF specifying it.
+- Installed `vitest`, `@vitejs/plugin-react`, `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`; added `vitest.config.ts` (jsdom env, `@/` alias), `vitest.setup.ts`, and a `test` script.
+- Tier 1 (`src/lib/` pure functions): `date.test.ts` (`relativeAge` day-boundary cases, `formatDate` invalid/empty), `status.test.ts` (`pipelineLevel` stage-precedence, `sourceLabel` fallback), `api.test.ts` (`toQuery`/`query` param serialization, `apiFetch` auth header, `ApiError` on non-ok, 204 handling) — 25 tests.
+- Tier 2 (dashboard visualizations named in HANDOFF): `ConversionFunnel`, `ActivityHeatmap`, `InsightCallout`, `MomentumCurve` — bar-width math, zero-division floors, weekday-padding, localStorage dismiss persistence — 13 tests.
+- Tier 3 (interactive components): `StatusControl`, `BoardToolbar`, `MilestoneList` — server actions and `next/navigation` mocked so button clicks, URL param pushes, and the company-search debounce assert without hitting the network — 11 tests.
+- All 49 tests pass (`npx vitest run`). Three commits, one per tier, `specs/` excluded from each per session request.
+
+**Key design choices:**
+- `apiFetch` tests mock `next/headers`'s `cookies()` rather than hitting real cookie storage, since it's a server-only API unavailable in the jsdom test environment.
+- `BoardToolbar`'s debounce test uses `fireEvent.change` + `vi.useFakeTimers()` instead of `userEvent.type`, since `userEvent`'s internal timer usage under fake timers caused the test to hang/timeout.
+- `ActivityHeatmap`'s weekday-padding test computes the expected lead-cell count via the same `new Date(date).getDay()` call the component uses, rather than hardcoding a day-of-week, to avoid timezone-dependent flakiness across machines.
+- `StatusControl` mocks the `'use server'` actions module entirely (`vi.mock('@/app/(app)/applications/[id]/actions')`) rather than letting clicks reach real `apiFetch` calls.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)
