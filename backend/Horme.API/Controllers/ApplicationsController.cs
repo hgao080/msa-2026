@@ -11,9 +11,9 @@ public class ApplicationsController(ApplicationService applicationService) : App
 [HttpGet("seasons/{seasonId:guid}/applications")]
     public async Task<IActionResult> GetApplications(Guid seasonId,
         [FromQuery] string? status, [FromQuery] string? source,
-        [FromQuery] string? sort, [FromQuery] string? order)
+        [FromQuery] string? sort, [FromQuery] string? order, [FromQuery] string? company)
     {
-        var apps = await applicationService.GetApplicationsAsync(seasonId, GetUserId(), status, source, sort, order);
+        var apps = await applicationService.GetApplicationsAsync(seasonId, GetUserId(), status, source, sort, order, company);
         
         return Ok(apps);
     }

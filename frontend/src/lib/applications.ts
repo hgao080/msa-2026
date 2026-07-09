@@ -13,7 +13,7 @@ export interface CreateApplicationData {
 
 export const getApplications = (
   seasonId: string,
-  params?: { status?: ApplicationStatus; source?: string; sort?: string; order?: string }
+  params?: { status?: ApplicationStatus; source?: string; sort?: string; order?: string; company?: string }
 ) => apiFetch<Application[]>(`/api/seasons/${seasonId}/applications${query(params)}`)
 
 export const getApplication = (id: string) => apiFetch<Application>(`/api/applications/${id}`)

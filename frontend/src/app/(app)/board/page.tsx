@@ -9,7 +9,7 @@ import { ApplicationRow } from '@/components/ApplicationRow'
 export default async function ApplicationBoardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; source?: string; sort?: string; order?: string }>
+  searchParams: Promise<{ status?: string; source?: string; sort?: string; order?: string; company?: string }>
 }) {
   const sp = await searchParams
   const seasons = await getSeasons()
@@ -35,6 +35,7 @@ export default async function ApplicationBoardPage({
     source: sp.source || undefined,
     sort: sp.sort || 'pipeline',
     order: sp.order || 'desc',
+    company: sp.company || undefined,
   })
 
   return (

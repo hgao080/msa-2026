@@ -1,11 +1,12 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { STATUSES, SOURCES, sourceLabel } from '@/lib/status'
 
 const SORTS = [
-  { key: 'appliedDate', label: 'Applied' },
-  { key: 'company', label: 'Company' },
+  { key: 'pipeline', label: 'Stage' },
+  { key: 'appliedDate', label: 'Age' },
   { key: 'lastUpdated', label: 'Updated' },
 ]
 
@@ -18,6 +19,8 @@ export function BoardToolbar() {
   const order = params.get('order') ?? 'desc'
   const status = params.get('status') ?? ''
   const source = params.get('source') ?? ''
+  const [company, setCompany] = useState(params.get('company') ?? '')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function set(next: Record<string, string>) {
     const p = new URLSearchParams(params.toString())
@@ -27,6 +30,18 @@ export function BoardToolbar() {
     }
     router.push(`${pathname}?${p.toString()}`)
   }
+
+  function onCompanyChange(value: string) {
+    setCompany(value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => set({ company: value }), 300)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
@@ -58,6 +73,15 @@ export function BoardToolbar() {
       >
         {order === 'asc' ? '↑' : '↓'}
       </button>
+
+      <input
+        type="text"
+        value={company}
+        onChange={(e) => onCompanyChange(e.target.value)}
+        placeholder="search company…"
+        aria-label="Search by company"
+        className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-fg placeholder:text-fg-3"
+      />
 
       <span className="ml-2 text-[10px] uppercase tracking-widest text-fg-3">filter</span>
       <select

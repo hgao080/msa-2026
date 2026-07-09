@@ -18,7 +18,7 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
     }
 
     public async Task<List<ApplicationDto>> GetApplicationsAsync(Guid seasonId, Guid userId, string? status,
-        string? source, string? sort, string? order)
+        string? source, string? sort, string? order, string? company = null)
     {
         var seasonExists = await db.Seasons.AnyAsync(s => s.Id == seasonId && s.UserId == userId);
         if (!seasonExists) throw new NotFoundException("Season not found");
@@ -32,6 +32,9 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
 
         if (!string.IsNullOrEmpty(source) && Enum.TryParse<ApplicationSource>(source, out var src))
             query = query.Where(a => a.Source == src);
+
+        if (!string.IsNullOrEmpty(company))
+            query = query.Where(a => a.Company.Contains(company));
 
         var apps = await query.ToListAsync();
 
