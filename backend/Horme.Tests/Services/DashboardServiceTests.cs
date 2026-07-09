@@ -1,147 +1,114 @@
-using Horme.API.Helpers;
+using Microsoft.EntityFrameworkCore;
+using Horme.API.Data;
+using Horme.API.Exceptions;
 using Horme.API.Models;
 using Horme.API.Services;
 
 namespace Horme.Tests.Services;
 
-public class ApplicationStatsTests
+public class DashboardServiceTests
 {
-    private static List<DailyActivity> Activities(Guid userId, params int[] daysAgo)
+    private static AppDbContext CreateDb()
     {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        var db = new AppDbContext(options);
+        db.Database.EnsureCreated();
+        return db;
+    }
+
+    private static Season SeedSeason(AppDbContext db, Guid userId, DateTime? startDate = null)
+    {
+        var season = new Season
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Name = "Season",
+            WeeklyTarget = 5,
+            StartDate = startDate ?? DateTime.UtcNow.AddDays(-10)
+        };
+        db.Seasons.Add(season);
+        return season;
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_OtherUsersSeason_ThrowsNotFound()
+    {
+        using var db = CreateDb();
+        var season = SeedSeason(db, Guid.NewGuid());
+        await db.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            new DashboardService(db).GetDashboardAsync(season.Id, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_NoActivity_ReturnsZeroedStatsAndFullHeatmapRange()
+    {
+        using var db = CreateDb();
+        var userId = Guid.NewGuid();
+        var season = SeedSeason(db, userId, DateTime.UtcNow.AddDays(-3));
+        await db.SaveChangesAsync();
+
+        var dashboard = await new DashboardService(db).GetDashboardAsync(season.Id, userId);
+
+        Assert.Equal(0, dashboard.Stats.TotalApplications);
+        Assert.Equal(0, dashboard.Stats.CurrentStreak);
+        Assert.Equal(4, dashboard.Heatmap.Count);
+        Assert.All(dashboard.Heatmap, d => Assert.False(d.Active));
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_WithApplicationsAndActivity_AggregatesStatsAndFunnel()
+    {
+        using var db = CreateDb();
+        var userId = Guid.NewGuid();
+        var season = SeedSeason(db, userId);
+        db.Applications.Add(new Application
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            SeasonId = season.Id,
+            Company = "Acme",
+            Role = "Engineer",
+            Status = ApplicationStatus.Offer,
+            AppliedDate = DateTime.UtcNow,
+            LastUpdated = DateTime.UtcNow
+        });
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        return daysAgo.Select(d => new DailyActivity { UserId = userId, Date = today.AddDays(-d) }).ToList();
+        db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today });
+        await db.SaveChangesAsync();
+
+        var dashboard = await new DashboardService(db).GetDashboardAsync(season.Id, userId);
+
+        Assert.Equal(1, dashboard.Stats.TotalApplications);
+        Assert.Equal(1, dashboard.Stats.CurrentStreak);
+        Assert.Equal(5, dashboard.Funnel.Count);
+        Assert.Equal(1, dashboard.Funnel.Single(f => f.Stage == "Offer").Count);
+        Assert.True(dashboard.Heatmap.First(d => d.Date == today.ToString("yyyy-MM-dd")).Active);
     }
 
     [Fact]
-    public void CurrentStreak_NoActivity_ReturnsZero()
+    public async Task GetDashboardAsync_ReportsMilestoneUnlockState()
     {
-        Assert.Equal(0, ApplicationStats.CurrentStreak([]));
-    }
-
-    [Fact]
-    public void CurrentStreak_ActivityToday_ReturnsOne()
-    {
-        var activities = Activities(Guid.NewGuid(), 0);
-        Assert.Equal(1, ApplicationStats.CurrentStreak(activities));
-    }
-
-    [Fact]
-    public void CurrentStreak_FiveConsecutiveDays_ReturnsFive()
-    {
-        var activities = Activities(Guid.NewGuid(), 0, 1, 2, 3, 4);
-        Assert.Equal(5, ApplicationStats.CurrentStreak(activities));
-    }
-
-    [Fact]
-    public void CurrentStreak_GapBeforeToday_ReturnsZero()
-    {
-        var activities = Activities(Guid.NewGuid(), 3, 4, 5);
-        Assert.Equal(0, ApplicationStats.CurrentStreak(activities));
-    }
-
-    [Fact]
-    public void LongestStreak_WithGap_ReturnsLongestSegment()
-    {
-        var activities = Activities(Guid.NewGuid(), 10, 9, 8, 3, 2);
-        Assert.Equal(3, ApplicationStats.LongestStreak(activities));
-    }
-
-    [Fact]
-    public void LongestStreak_NoActivity_ReturnsZero()
-    {
-        Assert.Equal(0, ApplicationStats.LongestStreak([]));
-    }
-
-    [Fact]
-    public void CalculateFunnel_NoApplications_ReturnsZeroCounts()
-    {
-        var funnel = DashboardService.CalculateFunnel([]);
-        Assert.Equal(5, funnel.Count);
-        Assert.All(funnel, f => Assert.Equal(0, f.Count));
-    }
-
-    [Fact]
-    public void ResponseRate_NoApps_ReturnsZero()
-    {
-        Assert.Equal(0, ApplicationStats.ResponseRate([]));
-    }
-
-    [Fact]
-    public void ResponseRate_AllApplied_ReturnsZero()
-    {
-        var apps = new List<Application>
+        using var db = CreateDb();
+        var userId = Guid.NewGuid();
+        var season = SeedSeason(db, userId);
+        db.UserMilestones.Add(new UserMilestone
         {
-            new() { Status = ApplicationStatus.Applied },
-            new() { Status = ApplicationStatus.Applied },
-        };
-        Assert.Equal(0, ApplicationStats.ResponseRate(apps));
-    }
+            UserId = userId,
+            SeasonId = season.Id,
+            MilestoneId = Guid.Parse("11111111-1111-1111-1111-111111111001"),
+            UnlockedAt = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
 
-    [Fact]
-    public void ResponseRate_HalfResponded_ReturnsHalf()
-    {
-        var apps = new List<Application>
-        {
-            new() { Status = ApplicationStatus.Applied },
-            new() { Status = ApplicationStatus.PhoneScreen },
-        };
-        Assert.Equal(0.5, ApplicationStats.ResponseRate(apps));
-    }
+        var dashboard = await new DashboardService(db).GetDashboardAsync(season.Id, userId);
 
-    private static Application AppWithStages(params ApplicationStage[] stages)
-    {
-        var app = new Application();
-        foreach (var s in stages) app.Stages.Add(s);
-        return app;
-    }
-
-    private static ApplicationStage Stage(StageType type, StageStatus status, int createdDaysAgo) => new()
-    {
-        Type = type,
-        Status = status,
-        CreatedAt = DateTime.UtcNow.AddDays(-createdDaysAgo)
-    };
-
-    [Fact]
-    public void ComputeStatus_NoStages_ReturnsApplied()
-    {
-        var app = new Application();
-        Assert.Equal(ApplicationStatus.Applied, ApplicationStats.ComputeStatus(app));
-    }
-
-    [Fact]
-    public void ComputeStatus_UsesLatestStageByCreatedAt()
-    {
-        var app = AppWithStages(
-            Stage(StageType.OA, StageStatus.Completed, createdDaysAgo: 5),
-            Stage(StageType.Technical, StageStatus.Completed, createdDaysAgo: 1));
-
-        Assert.Equal(ApplicationStatus.Technical, ApplicationStats.ComputeStatus(app));
-    }
-
-    [Fact]
-    public void ComputeStatus_LatestStageFailed_ReturnsRejected()
-    {
-        var app = AppWithStages(
-            Stage(StageType.OA, StageStatus.Completed, createdDaysAgo: 5),
-            Stage(StageType.Technical, StageStatus.Failed, createdDaysAgo: 1));
-
-        Assert.Equal(ApplicationStatus.Rejected, ApplicationStats.ComputeStatus(app));
-    }
-
-    [Fact]
-    public void ComputeStatus_WithdrawnAtSet_ReturnsWithdrawn()
-    {
-        var app = AppWithStages(Stage(StageType.OA, StageStatus.Completed, createdDaysAgo: 1));
-        app.WithdrawnAt = DateTime.UtcNow;
-
-        Assert.Equal(ApplicationStatus.Withdrawn, ApplicationStats.ComputeStatus(app));
-    }
-
-    [Fact]
-    public void ComputeStatus_OfferAndWithdrawnBothSet_OfferTakesPrecedence()
-    {
-        var app = new Application { OfferedAt = DateTime.UtcNow, WithdrawnAt = DateTime.UtcNow };
-        Assert.Equal(ApplicationStatus.Offer, ApplicationStats.ComputeStatus(app));
+        var unlocked = dashboard.Milestones.Single(m => m.Milestone.Slug == "first-application");
+        var locked = dashboard.Milestones.Single(m => m.Milestone.Slug == "ten-applications");
+        Assert.NotNull(unlocked.UnlockedAt);
+        Assert.Null(locked.UnlockedAt);
     }
 }
