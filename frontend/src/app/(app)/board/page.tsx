@@ -43,7 +43,7 @@ export default async function ApplicationBoardPage({
       <div className="animate-launch mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-xl font-semibold tracking-tight text-fg">
-            {active.name} <span className="font-mono text-sm font-normal text-fg-3">// {apps.length} in play</span>
+            {active.name} <span className="font-mono text-sm font-normal text-fg-3">// {apps.length} application{apps.length === 1 ? '' : 's'}</span>
           </h1>
         </div>
         <AddApplication seasonId={active.id} />
