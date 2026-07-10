@@ -353,6 +353,35 @@ Required by MSA 2026 Phase 2 assessment.
 - Regenerated the EF migration via `dotnet ef migrations add` rather than hand-editing the existing `InitialCreate` migration/snapshot, since no local DB file existed yet to make in-place editing safe, and hand-editing designer/snapshot files by hand risked missing a spot (User.Role vs Application.Role share the property name).
 - Had to stop a running `Horme.API.exe` dev server (locked build output) before the build/migration would succeed — confirmed with the user before killing the process.
 
+## Session 16 — 2026-07-10 — Azure deploy options + Dockerize project
+
+**Prompts:**
+- "I want to deploy my backend on Azure. What options do I have? ..."
+- "I am no longer using SQLite where did you get this information from? Update stale references"
+- "An advanced requirement I could aim to tick off is: 'dockerize your project using docker' though I do not want to do this for the sake of doing this. What advantages and disadvantages does dockerizing my project bring"
+- "How would deployment look if I did dockerize my project? Are frontend and backend and db still all separate deployments?"
+- "So my local development would no longer be using an installation of localdb on my pc but instead an installation of localdb in a container?"
+- "So LocalDB only works on windows"
+- "Could you dockerize my project then before I go into deployment"
+
+**Generated / decided:**
+- Discussed Azure backend hosting options (App Service direct deploy, App Service containerized, Container Apps, AKS, ACI) and Docker tradeoffs (assessment-requirement credit + portability vs. extra build/ops surface for a low-traffic app).
+- Found and fixed stale `SQLite` reference in `CLAUDE.md` Stack line (project moved to SQL Server back in Session 11; CLAUDE.md was never updated) — now reads `SQL Server`.
+- Clarified LocalDB is Windows-only (no Linux/container build exists); a dockerized setup replaces it with a real SQL Server container for local dev, not "LocalDB in a container."
+- Dockerized the full stack:
+  - `backend/Horme.API/Dockerfile` — multi-stage `dotnet/sdk:10.0` build → `dotnet/aspnet:10.0` runtime, port 8080, `.dockerignore` added.
+  - `frontend/Dockerfile` — multi-stage pnpm build using `output: "standalone"` (added to `next.config.ts`), `.dockerignore` added.
+  - `docker-compose.yml` (repo root) — `db` (`mcr.microsoft.com/mssql/server:2022-latest` with healthcheck), `api` (env-var-overridden connection string, waits on `db` healthy), `web` (`HORME_API_URL=http://api:8080`).
+  - `.env.example` for `SA_PASSWORD` / `JWT_KEY`; real `.env` already covered by existing root `.gitignore`.
+- Verified end-to-end: `docker compose build` (both images), `docker compose up` (db healthy, api auto-migrates + seeds via existing `Program.cs` logic), `POST /api/auth/login` against the containerized stack returned 200 + valid JWT, frontend `/login` returned 200.
+- Fixed a build error found during verification: Dockerfile assumed a `frontend/public/` directory that doesn't exist in this project — removed that `COPY` line.
+- Flagged (not changed, out of scope): root `.gitignore` still has a stale `# SQLite databases` block from before the Session 11 SQL Server migration.
+
+**Key design choices:**
+- Kept `appsettings.json`'s `(localdb)` connection string untouched for non-Docker local dev — Docker Compose overrides it purely via `ConnectionStrings__DefaultConnection` env var (12-factor style), no new `appsettings.Docker.json` needed.
+- Did not containerize the database for Azure deployment — recommended **Azure SQL Database** (managed) in prod, container `db` service is local-dev-only, matching the existing `UseSqlServer` provider with no code change.
+- Recommended App Service direct (non-container) deploy as the default Azure target for this project's scope, with Docker treated as a requirement-checkbox win rather than an operational necessity at this scale.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)
