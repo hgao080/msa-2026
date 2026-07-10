@@ -27,13 +27,16 @@ public static class ApplicationStats
         return level;
     }
 
+    // any interview-stage record counts, even if later withdrawn — the company still responded
+    public static bool HasResponded(Application app) =>
+        app.Stages.Count != 0 ||
+        (app.Status != ApplicationStatus.Applied && app.Status != ApplicationStatus.Withdrawn);
+
     public static double ResponseRate(IList<Application> apps)
     {
         if (apps.Count == 0) return 0;
-        
-        var responded = apps.Count(a =>
-            a.Status != ApplicationStatus.Applied &&
-            a.Status != ApplicationStatus.Withdrawn);
+
+        var responded = apps.Count(HasResponded);
         return (double)responded / apps.Count;
     }
 

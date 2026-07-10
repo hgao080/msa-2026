@@ -88,6 +88,18 @@ public class ApplicationStatsTests
         Assert.Equal(0.5, ApplicationStats.ResponseRate(apps));
     }
 
+    [Fact]
+    public void ResponseRate_WithdrawnWithStage_CountsAsResponded()
+    {
+        var withdrawnWithStage = new Application { Status = ApplicationStatus.Withdrawn };
+        withdrawnWithStage.Stages.Add(new ApplicationStage { Type = StageType.OA, Status = StageStatus.Completed });
+        var withdrawnNoStage = new Application { Status = ApplicationStatus.Withdrawn };
+
+        var apps = new List<Application> { withdrawnWithStage, withdrawnNoStage };
+
+        Assert.Equal(0.5, ApplicationStats.ResponseRate(apps));
+    }
+
     private static Application AppWithStages(params ApplicationStage[] stages)
     {
         var app = new Application();

@@ -11,7 +11,7 @@ public class DashboardService(AppDbContext db)
     public static List<FunnelStageDto> CalculateFunnel(List<Application> applications)
     {
         var total = applications.Count;
-        var responded = applications.Count(a => a.Stages.Count != 0);
+        var responded = applications.Count(ApplicationStats.HasResponded);
         var interviewed = applications.Count(a =>
             a.Stages.Any(s => s.Type is StageType.Technical or StageType.Behavioural) ||
             a.Status == ApplicationStatus.Offer);

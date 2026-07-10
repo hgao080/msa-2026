@@ -8,9 +8,9 @@ export function ActivityHeatmap({ heatmap }: { heatmap: Day[] }) {
   const lead = heatmap.length ? new Date(heatmap[0].date).getDay() : 0
 
   return (
-    <div className="rounded-xl border border-line bg-surface p-5">
+    <div className="flex h-full flex-col rounded-xl border border-line bg-surface p-5">
       <h2 className="mb-4 text-[10px] uppercase tracking-widest text-fg-3">Activity</h2>
-      <div className="flex gap-2">
+      <div className="flex flex-1 items-center justify-center gap-2">
         <div className="grid grid-rows-7 gap-[3px] pt-[1px] text-[9px] text-fg-3">
           <span>M</span><span /><span>W</span><span /><span>F</span><span /><span />
         </div>

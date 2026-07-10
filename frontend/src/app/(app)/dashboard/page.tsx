@@ -77,7 +77,7 @@ export default async function DashboardPage() {
         <h1 className="font-display text-2xl font-bold tracking-tight text-fg">{active.name}</h1>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Readout value={String(stats.totalApplications)} label="applications" />
         <Readout value={`${stats.weeklyProgress}/${stats.weeklyTarget}`} label="this week" />
         <Readout
@@ -87,19 +87,18 @@ export default async function DashboardPage() {
           accent
         />
         <Readout value={`${Math.round(stats.responseRate * 100)}%`} label="response rate" />
-        <Readout value={String(stats.totalInterviews)} label="interview rounds" />
       </div>
 
       {dash.topInsight && <InsightCallout insight={dash.topInsight} />}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <MomentumCurve points={momentum} bestWeek={stats.personalBests.bestWeekApplications} />
-        <ActivityHeatmap heatmap={dash.heatmap} />
+        <MilestoneList milestones={dash.milestones} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        <ActivityHeatmap heatmap={dash.heatmap} />
         <ConversionFunnel funnel={dash.funnel} />
-        <MilestoneList milestones={dash.milestones} />
       </div>
     </main>
   )

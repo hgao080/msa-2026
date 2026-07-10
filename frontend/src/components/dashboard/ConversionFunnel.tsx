@@ -4,9 +4,9 @@ export function ConversionFunnel({ funnel }: { funnel: FunnelStage[] }) {
   const max = Math.max(1, ...funnel.map((f) => f.count))
 
   return (
-    <div className="rounded-xl border border-line bg-surface p-5">
+    <div className="flex h-full flex-col rounded-xl border border-line bg-surface p-5">
       <h2 className="mb-4 text-[10px] uppercase tracking-widest text-fg-3">Conversion funnel</h2>
-      <div className="space-y-2.5">
+      <div className="flex flex-1 flex-col justify-center space-y-2.5">
         {funnel.map((f) => (
           <div key={f.stage} className="flex items-center gap-3">
             <span className="w-20 shrink-0 text-xs text-fg-2">{f.stage}</span>
