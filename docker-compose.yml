@@ -17,6 +17,7 @@ services:
   api:
     build:
       context: ./backend/Horme.API
+      target: dev
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: Server=db,1433;Database=Horme;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
@@ -25,6 +26,11 @@ services:
       Jwt__Audience: horme-client
       Jwt__ExpiryMinutes: "1440"
       Frontend__Url: http://localhost:3000
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    volumes:
+      - ./backend/Horme.API:/src
+      - api-obj:/src/obj
+      - api-bin:/src/bin
     ports:
       - "5210:8080"
     depends_on:
@@ -34,8 +40,14 @@ services:
   web:
     build:
       context: ./frontend
+      target: dev
     environment:
       HORME_API_URL: http://api:8080
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
     ports:
       - "3000:3000"
     depends_on:
@@ -43,3 +55,5 @@ services:
 
 volumes:
   mssql-data:
+  api-obj:
+  api-bin:

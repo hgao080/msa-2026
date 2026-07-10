@@ -6,6 +6,12 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
+FROM deps AS dev
+WORKDIR /app
+COPY . .
+EXPOSE 3000
+CMD ["pnpm", "dev", "--webpack"]
+
 FROM base AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules

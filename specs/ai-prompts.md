@@ -416,6 +416,26 @@ Required by MSA 2026 Phase 2 assessment.
 - Diagnosed by reproducing failures locally (`docker run` with the same env vars/connection string) rather than guessing from Azure's opaque `ContainerTimeout`/exit-139 platform logs — this is what turned a segfault-chasing detour into a five-minute fix once tried.
 - Did not act on the SQL Serverless auto-pause / disable-auto-pause question — explained the free-tier interaction and let the user decide; no change made there this session.
 
+## Session 18 — 2026-07-11 — Dockerized dev workflow + HMR verification
+
+**Prompts:**
+- "My frontend and backend should all be containerized though also supporting non-containerized development if wanted with the backend using localdb. When using the containerized workflow is there any support for hot module reloading?"
+- "What setup would you suggest?"
+- "Realistically I'm never gonna be booting up a prod version locally so I am happy to override all the docker configuration present to be focused on local development first"
+- "yeah spin it up and check HMR works"
+
+**Generated / decided:**
+- Added a `dev` build stage to both `frontend/Dockerfile` and `backend/Horme.API/Dockerfile`, placed *before* the existing prod stage so CI's plain `docker build` (no `--target`, defaults to last stage) still builds the prod image unchanged. `docker-compose.yml` now targets `dev` directly with bind mounts (`./frontend:/app`, `./backend/Horme.API:/src`) plus anonymous volumes over `node_modules`/`.next`/`obj`/`bin` so container-built deps aren't shadowed by the host mount. No override file — this repo will never run a local prod stack, so the base compose file is dev-only by design.
+- Verified backend HMR works out of the box: `dotnet watch run` picked up a `Services/AuthService.cs` edit instantly. One real fix needed: the edit was a Roslyn "rude edit" (await-expression change), which triggers an interactive y/n restart prompt — with no TTY attached to a detached compose container this hangs forever. Added `--non-interactive` to the `dotnet watch` command so rude edits auto-restart instead of hanging.
+- Verified frontend HMR does **not** work with Turbopack (`next dev`, the default in this Next 16 build): confirmed via three independent tests (host-side edit, `docker exec sed` edit, and a bare `touch` from inside the container) that route recompilation never fires, even after 30+ second waits — only a full `docker compose restart web` picks up new content. Editing `next.config.ts` itself did trigger Turbopack's separate config-watcher restart, isolating the bug to the route/app-directory watcher specifically, not the bind mount (reads via `docker exec cat` always reflected fresh content instantly) and not Windows/WSL2 propagation lag. Consistent with `frontend/AGENTS.md`'s warning that this Next build has undocumented breaking changes from training data.
+- Fix: switched the frontend dev `CMD` to `next dev --webpack`. Re-tested the same live-edit flow — webpack's watcher (still `WATCHPACK_POLLING`-driven) picked up the change and logged `○ Compiling /login ...` within seconds, no restart needed. Also added `watchOptions.pollIntervalMs: 300` to `next.config.ts`, gated on `WATCHPACK_POLLING === "true"` so bare-metal `pnpm dev` outside Docker doesn't poll unnecessarily.
+- Spun up the full stack (`docker compose up -d --build`) to run all of the above as live tests against real endpoints (`/login` page content, `POST /api/auth/login`), not just log-reading; reverted every test marker string afterward and tore the stack down (`docker compose down`) at the end.
+
+**Key design choices:**
+- Kept prod stages last in both Dockerfiles specifically so the Azure deploy workflow (`.github/workflows/deploy.yml`, plain `docker build <dir>` with no target flag) needed zero changes — dev-focused compose and prod CI build off the same Dockerfiles without conflicting.
+- Diagnosed the Turbopack HMR failure by isolating variables one at a time (bind-mount read check → container-native touch → container-native content edit → config-file edit) rather than guessing at a Docker/Windows explanation first, since the obvious suspect (bind-mount propagation) was disproved early by the `exec cat` check reflecting changes instantly.
+- Chose `--webpack` over further Turbopack debugging (e.g. patching the Rust watcher, filing upstream) per user's explicit choice when offered the tradeoff — prioritizes a working local dev loop now over chasing what's likely a Turbopack/Next 16 bug.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)
