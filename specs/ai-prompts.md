@@ -382,6 +382,40 @@ Required by MSA 2026 Phase 2 assessment.
 - Did not containerize the database for Azure deployment — recommended **Azure SQL Database** (managed) in prod, container `db` service is local-dev-only, matching the existing `UseSqlServer` provider with no code change.
 - Recommended App Service direct (non-container) deploy as the default Azure target for this project's scope, with Docker treated as a requirement-checkbox win rather than an operational necessity at this scale.
 
+## Session 17 — 2026-07-10 — Azure deployment: Entra-only SQL, ACR, App Service (backend + frontend)
+
+**Prompts:**
+- "Now that I have containerized both. Let me begin with deploying the backend. Should I setup Azure SQL first"
+- "Can I not use Microsoft Entra-only?" / "Go Entra-only. What do I need to do"
+- "Could you dockerize my project then before I go into deployment" (installed Azure CLI, ACR push)
+- "Ok let's just use ACR" / "ACR created" / "Do you need ACR or docker hub to deploy a container?"
+- "Yes go ahead" (App Service creation, Managed Identity wiring)
+- "Done, go ahead" / "check the logs" / "I think the issue is there is no user. What command do I need to run?"
+- "So what is the error with the deployment?" / pasted log stream showing `CREATE TABLE permission denied`
+- "Move onto the frontend deployment"
+- "Do I not need to wire up the environment variables in Azure?"
+- "Nevermind seems to work though it is slightly slow and unresponsive. Will it be slow on initial launch because containers spin down to 0 when inactive?"
+- "What was the reason we didn't go with Container Apps?"
+- "Don't change any settings. Could you just go find the configuration for my frontend, backend and sql deployments and verify where the slow start is actually occurring"
+- "Will disabling auto-pause on the SQL instance introduce more costs?" / "Enable Always On on both"
+- "I should have the Free database offer applied. What does this give me"
+
+**Generated / decided:**
+- Deployed full stack to Azure, resource group `msa-2026` (australiaeast): `horme-sql` (Azure SQL logical server, **Microsoft Entra authentication only** — no SQL login exists), `Horme` database (`GP_S_Gen5` Serverless, free-limit offer applied), `horme` ACR (Basic, admin disabled), `horme-plan` (Linux, B1) hosting both `horme-api` and `horme-web` Web Apps for Containers.
+- Passwordless end-to-end: both Web Apps use **System-assigned Managed Identity** for ACR image pulls (`acrUseManagedIdentityCreds=true`, `AcrPull` role) and the backend uses the same identity for SQL access (`Authentication=Active Directory Managed Identity` in the connection string, granted via `CREATE USER [horme-api] FROM EXTERNAL PROVIDER` + `db_datareader`/`db_datawriter`/`db_ddladmin` roles run in Azure Portal Query Editor as the Entra admin).
+- Installed Azure CLI (`winget install Microsoft.AzureCLI`) mid-session since Portal-only setup couldn't push local Docker images; used it for all subsequent resource creation/config. Windows/Git-Bash quoting broke `az` calls with long `--scope` arguments (`'C:\Program' is not recognized`) — switched those specific calls to the PowerShell tool, which handled the same paths/arguments natively.
+- Debugged two real deployment failures in sequence (both surfaced as Azure's generic `ContainerTimeout` / exit code 139, which is misleading):
+  1. `Microsoft.Data.SqlClient 5.1.6` (pulled in transitively via `EFCore.SqlServer 9.0.6`) — bumped to `7.0.2` while chasing a suspected OpenSSL/native-SNI crash theory; required also bumping `System.IdentityModel.Tokens.Jwt` to `8.16.0` to resolve a downgrade conflict. This did not fix the real issue but was a legitimate version bump kept in place.
+  2. Real root cause: SqlClient 7.x split Entra ID auth providers into a separate package — `Authentication=Active Directory Managed Identity` threw `Cannot find an authentication provider for 'ActiveDirectoryManagedIdentity'` at startup (inside `db.Database.Migrate()`, before Kestrel binds to the port, which is why Azure reported it as a container-timeout crash rather than a clean error). Fixed by adding `Microsoft.Data.SqlClient.Extensions.Azure 7.0.2`. Confirmed by reproducing the exact stack trace locally via `docker run` with the same connection string — proved it wasn't a segfault before spending more time on native-library theories.
+  3. Follow-up permission error once the app could actually reach SQL: `CREATE TABLE permission denied` — the Managed Identity's initial grant (`db_datareader`/`db_datawriter` only) didn't cover EF Core's migration DDL; fixed by granting `db_ddladmin` too.
+- Deployed frontend the same way: `horme-web` Web App, own Managed Identity + `AcrPull` grant, `HORME_API_URL=https://horme-api.azurewebsites.net` app setting; updated backend's `Frontend__Url` app setting to the deployed frontend origin for CORS.
+- Investigated a "slow/unresponsive" report post-deploy: confirmed (read-only, `az ... show` calls, no changes) that App Service B1 does **not** scale to zero (that's Container Apps behavior, not what's deployed) — the real cause was `alwaysOn: false` on both Web Apps (off by default even at Basic tier), which unloads the app after ~20 min idle. Also flagged Azure SQL Serverless auto-pause (`autoPauseDelay: 60` min) as a secondary contributor. User approved enabling Always On on both apps (free at Basic tier, no cost impact); left SQL auto-pause untouched after explaining it interacts with the DB's **free-tier offer** (`useFreeLimit: true`, 100k free vCore-seconds/month, `freeLimitExhaustionBehavior: AutoPause`) — disabling idle auto-pause would burn the free quota faster and still end up auto-paused via quota exhaustion instead, with no net benefit.
+
+**Key design choices:**
+- Chose Entra-only SQL auth and Managed-Identity-based ACR pulls over SQL-auth/admin-user credentials specifically to avoid any stored password anywhere in the deployed chain, at the cost of extra one-time setup (Managed Identity role grants, Query Editor T-SQL, Windows CLI quoting friction) — user explicitly opted into this tradeoff over the simpler SQL-auth path.
+- Diagnosed by reproducing failures locally (`docker run` with the same env vars/connection string) rather than guessing from Azure's opaque `ContainerTimeout`/exit-139 platform logs — this is what turned a segfault-chasing detour into a five-minute fix once tried.
+- Did not act on the SQL Serverless auto-pause / disable-auto-pause question — explained the free-tier interaction and let the user decide; no change made there this session.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)
