@@ -74,7 +74,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapOpenApi().AllowAnonymous();
-app.MapScalarApiReference(opts => opts.Title = "Horme API").AllowAnonymous();
+app.MapScalarApiReference().AllowAnonymous();
 
 using (var scope = app.Services.CreateScope())
 {
