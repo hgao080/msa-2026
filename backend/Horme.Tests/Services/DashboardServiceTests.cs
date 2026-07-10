@@ -84,7 +84,7 @@ public class DashboardServiceTests
 
         Assert.Equal(1, dashboard.Stats.TotalApplications);
         Assert.Equal(1, dashboard.Stats.CurrentStreak);
-        Assert.Equal(5, dashboard.Funnel.Count);
+        Assert.Equal(4, dashboard.Funnel.Count);
         Assert.Equal(1, dashboard.Funnel.Single(f => f.Stage == "Offer").Count);
         Assert.True(dashboard.Heatmap.First(d => d.Date == today.ToString("yyyy-MM-dd")).Active);
     }

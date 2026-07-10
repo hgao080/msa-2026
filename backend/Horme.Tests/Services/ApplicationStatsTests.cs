@@ -56,7 +56,7 @@ public class ApplicationStatsTests
     public void CalculateFunnel_NoApplications_ReturnsZeroCounts()
     {
         var funnel = DashboardService.CalculateFunnel([]);
-        Assert.Equal(5, funnel.Count);
+        Assert.Equal(4, funnel.Count);
         Assert.All(funnel, f => Assert.Equal(0, f.Count));
     }
 

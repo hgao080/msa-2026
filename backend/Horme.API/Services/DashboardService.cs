@@ -11,12 +11,10 @@ public class DashboardService(AppDbContext db)
     public static List<FunnelStageDto> CalculateFunnel(List<Application> applications)
     {
         var total = applications.Count;
-        var responded = applications.Count(a =>
-            a.Status != ApplicationStatus.Applied && a.Status != ApplicationStatus.Withdrawn);
+        var responded = applications.Count(a => a.Stages.Count != 0);
         var interviewed = applications.Count(a =>
-            a.Stages.Count != 0 || a.Status == ApplicationStatus.Offer);
-        var final = applications.Count(a =>
-            a.Status is ApplicationStatus.Behavioural or ApplicationStatus.Offer);
+            a.Stages.Any(s => s.Type is StageType.Technical or StageType.Behavioural) ||
+            a.Status == ApplicationStatus.Offer);
         var offer = applications.Count(a => a.Status == ApplicationStatus.Offer);
 
         return
@@ -24,8 +22,7 @@ public class DashboardService(AppDbContext db)
             new FunnelStageDto("Applied", total, null),
             new FunnelStageDto("Responded", responded, total > 0 ? (double)responded / total : null),
             new FunnelStageDto("Interview", interviewed, responded > 0 ? (double)interviewed / responded : null),
-            new FunnelStageDto("Final round", final, interviewed > 0 ? (double)final / interviewed : null),
-            new FunnelStageDto("Offer", offer, final > 0 ? (double)offer / final : null),
+            new FunnelStageDto("Offer", offer, interviewed > 0 ? (double)offer / interviewed : null),
         ];
     }
 

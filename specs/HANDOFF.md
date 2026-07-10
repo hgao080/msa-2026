@@ -526,24 +526,21 @@ private async Task LogActivity(Guid userId)
 
 ```csharp
 // DashboardService.cs
-public List<FunnelStageDto> CalculateFunnel(List<Application> applications)
+public static List<FunnelStageDto> CalculateFunnel(List<Application> applications)
 {
-    int total = applications.Count;
-    int responded = applications.Count(a =>
-        a.Status != ApplicationStatus.Applied && a.Status != ApplicationStatus.Withdrawn);
-    int interviewed = applications.Count(a =>
-        a.Stages.Any() || (int)a.Status >= (int)ApplicationStatus.Screening);
-    int final = applications.Count(a =>
-        a.Status == ApplicationStatus.Final || a.Status == ApplicationStatus.Offer);
-    int offer = applications.Count(a => a.Status == ApplicationStatus.Offer);
+    var total = applications.Count;
+    var responded = applications.Count(a => a.Stages.Count != 0);
+    var interviewed = applications.Count(a =>
+        a.Stages.Any(s => s.Type is StageType.Technical or StageType.Behavioural) ||
+        a.Status == ApplicationStatus.Offer);
+    var offer = applications.Count(a => a.Status == ApplicationStatus.Offer);
 
     return
     [
-        new("Applied",     total,      null),
-        new("Responded",   responded,  total > 0 ? (double)responded / total : null),
-        new("Interview",   interviewed, responded > 0 ? (double)interviewed / responded : null),
-        new("Final round", final,       interviewed > 0 ? (double)final / interviewed : null),
-        new("Offer",       offer,       final > 0 ? (double)offer / final : null),
+        new FunnelStageDto("Applied", total, null),
+        new FunnelStageDto("Responded", responded, total > 0 ? (double)responded / total : null),
+        new FunnelStageDto("Interview", interviewed, responded > 0 ? (double)interviewed / responded : null),
+        new FunnelStageDto("Offer", offer, interviewed > 0 ? (double)offer / interviewed : null),
     ];
 }
 ```

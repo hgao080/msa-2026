@@ -7,7 +7,7 @@ const W = 560
 const H = 170
 const PAD = 10
 
-export function MomentumCurve({ points }: { points: Point[] }) {
+export function MomentumCurve({ points, bestWeek }: { points: Point[]; bestWeek?: number }) {
   const max = Math.max(1, ...points.map((p) => p.value))
   const n = Math.max(points.length, 2)
 
@@ -24,7 +24,17 @@ export function MomentumCurve({ points }: { points: Point[] }) {
     <div className="rounded-xl border border-line bg-surface p-5">
       <div className="mb-1 flex items-baseline justify-between">
         <span className="text-[10px] uppercase tracking-widest text-fg-3">Season momentum</span>
-        <span className="font-display text-sm font-semibold text-fg">↗ {points.at(-1)?.value ?? 0} total</span>
+        <div className="text-right">
+          <span className="font-display text-sm font-semibold text-fg">↗ {points.at(-1)?.value ?? 0} total</span>
+          {!!bestWeek && (
+            <div className="text-[10px] text-fg-3">
+              <span className="text-accent" style={{ transform: 'skewX(-12deg)', display: 'inline-block' }} aria-hidden>
+                ´
+              </span>{' '}
+              best week {bestWeek}
+            </div>
+          )}
+        </div>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Cumulative applications over the season">
         <defs>
