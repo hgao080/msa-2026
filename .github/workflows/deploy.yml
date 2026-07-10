@@ -1,0 +1,45 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ACR_LOGIN_SERVER: horme.azurecr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR login
+        run: az acr login --name horme
+
+      - name: Build and push api image
+        run: |
+          docker build -t $ACR_LOGIN_SERVER/horme-api:${{ github.sha }} -t $ACR_LOGIN_SERVER/horme-api:latest backend/Horme.API
+          docker push $ACR_LOGIN_SERVER/horme-api:${{ github.sha }}
+          docker push $ACR_LOGIN_SERVER/horme-api:latest
+
+      - name: Build and push web image
+        run: |
+          docker build -t $ACR_LOGIN_SERVER/horme-web:${{ github.sha }} -t $ACR_LOGIN_SERVER/horme-web:latest frontend
+          docker push $ACR_LOGIN_SERVER/horme-web:${{ github.sha }}
+          docker push $ACR_LOGIN_SERVER/horme-web:latest
+
+      - name: Restart App Services
+        run: |
+          az webapp restart -g msa-2026 -n horme-api
+          az webapp restart -g msa-2026 -n horme-web
