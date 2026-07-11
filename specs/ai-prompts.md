@@ -436,6 +436,25 @@ Required by MSA 2026 Phase 2 assessment.
 - Diagnosed the Turbopack HMR failure by isolating variables one at a time (bind-mount read check → container-native touch → container-native content edit → config-file edit) rather than guessing at a Docker/Windows explanation first, since the obvious suspect (bind-mount propagation) was disproved early by the `exec cat` check reflecting changes instantly.
 - Chose `--webpack` over further Turbopack debugging (e.g. patching the Rust watcher, filing upstream) per user's explicit choice when offered the tradeoff — prioritizes a working local dev loop now over chasing what's likely a Turbopack/Next 16 bug.
 
+## Session 19 — 2026-07-11 — Mobile responsive frontend
+
+**Prompts:**
+- "Could you make the frontend mobile responsive. Use any relevant design skills to help you make decisions for components that may be hard to display on or make mobile responsive. If still unsure then generate me an HTML showing options and wait for me to pick a choice."
+- "Let's go with B"
+
+**Generated / decided:**
+- Audited every page/component for mobile fitness. Board (`ApplicationRow`/board page header) already had `max-[640px]` handling from earlier sessions; dashboard charts (`MomentumCurve`, `ActivityHeatmap`, `ConversionFunnel`) were already fluid/SVG-based. `NavBar` was the one genuinely hard case — 3 nav links + username + theme toggle + logout in one unwrapped row, no mobile pattern at all.
+- Used the `modern-web-guidance` and `frontend-design` skills, then built an interactive 3-option HTML artifact (hamburger drawer / bottom tab bar / collapsed icon row + avatar popover) styled with real Horme tokens and shipped it for a live pick rather than guessing. User chose **B — bottom tab bar**.
+- `NavBar.tsx`: top bar collapses on mobile to wordmark + theme toggle + logout only (nav links `hidden sm:flex`, username `hidden sm:inline`); added a new `fixed inset-x-0 bottom-0 sm:hidden` tab bar reusing the same `navItems`/active-route logic, with a violet top-indicator bar on the active tab and `env(safe-area-inset-bottom)` padding for notched phones.
+- `(app)/layout.tsx`: wrapped `{children}` in `pb-20 sm:pb-0` so the fixed mobile tab bar never overlaps page content.
+- Fixed three smaller mobile rough edges found during the audit: `BoardToolbar` search/filter inputs now flex/wrap cleanly instead of being squeezed by unconstrained default sizing; `ConversionFunnel`'s stage label shrinks (`w-14` → `sm:w-20`) so the bar+count+% row doesn't crowd out on narrow widths; `StatusControl` on the application detail page changed from non-wrapping `inline-flex` to `flex flex-wrap` so the status pill + Offer/Withdraw buttons don't overflow horizontally on ~320–375px screens.
+- Verified live end-to-end rather than trusting the diff: installed Playwright + a cached headless Chromium into the session scratchpad, brought up `docker compose up -d db api` (the session-16/18 dev containers) alongside the local `pnpm dev` frontend, registered a real test user + season + 3 applications via the API, logged in through the actual `/login` form, and screenshotted `/dashboard`, `/board`, `/seasons`, and an application detail page at a 390×844 mobile viewport plus `/board` at 1280×900 desktop. Confirmed: no horizontal scroll (`scrollWidth > clientWidth` check), zero console errors, bottom tab bar renders with correct active state, desktop top nav unchanged. Tore down the containers and killed the dev server afterward.
+
+**Key design choices:**
+- Picked the bottom tab bar over the hamburger drawer specifically because Horme's identity is "keep the momentum" — nav that disappears behind a menu works against an app meant for quick check-ins during a job hunt; a thumb-zone, always-visible tab bar fits the product's own stated purpose better than the more common drawer pattern.
+- Reused the existing `navItems` array and `pathname === to` active-check for both the desktop links and the new mobile tab bar rather than introducing a second nav-config source of truth.
+- Didn't touch `ApplicationRow`/board grid or the dashboard chart components beyond the two one-line width tweaks above — they already degrade acceptably at mobile widths from earlier sessions' `max-[640px]` work, so no changes traced to this request's scope.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)

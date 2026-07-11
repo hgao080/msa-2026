@@ -9,7 +9,7 @@ export function ConversionFunnel({ funnel }: { funnel: FunnelStage[] }) {
       <div className="flex flex-1 flex-col justify-center space-y-2.5">
         {funnel.map((f) => (
           <div key={f.stage} className="flex items-center gap-3">
-            <span className="w-20 shrink-0 text-xs text-fg-2">{f.stage}</span>
+            <span className="w-14 shrink-0 truncate text-xs text-fg-2 sm:w-20">{f.stage}</span>
             <div className="h-6 flex-1 overflow-hidden rounded bg-surface-2">
               <div
                 className="h-full rounded"

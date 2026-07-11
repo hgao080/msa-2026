@@ -24,7 +24,7 @@ export function StatusControl({
   const [pending, start] = useTransition()
 
   return (
-    <div className="inline-flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <span className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold uppercase tracking-wide" style={{ color: STATUS_COLOR[status] }}>
         <span className="h-2 w-2 rounded-full" style={{ background: STATUS_COLOR[status] }} />
         {status}

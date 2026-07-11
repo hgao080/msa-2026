@@ -80,7 +80,7 @@ export function BoardToolbar() {
         onChange={(e) => onCompanyChange(e.target.value)}
         placeholder="search company…"
         aria-label="Search by company"
-        className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-fg placeholder:text-fg-3"
+        className="min-w-0 flex-1 basis-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-fg placeholder:text-fg-3 sm:basis-40"
       />
 
       <span className="ml-2 text-[10px] uppercase tracking-widest text-fg-3">filter</span>
@@ -88,7 +88,7 @@ export function BoardToolbar() {
         value={status}
         onChange={(e) => set({ status: e.target.value })}
         aria-label="Filter by status"
-        className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-fg"
+        className="min-w-0 flex-1 basis-32 rounded-md border border-line bg-surface px-2.5 py-1.5 text-fg"
       >
         <option value="">all status</option>
         {STATUSES.map((s) => (
@@ -99,7 +99,7 @@ export function BoardToolbar() {
         value={source}
         onChange={(e) => set({ source: e.target.value })}
         aria-label="Filter by source"
-        className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-fg"
+        className="min-w-0 flex-1 basis-32 rounded-md border border-line bg-surface px-2.5 py-1.5 text-fg"
       >
         <option value="">all sources</option>
         {SOURCES.map((s) => (
