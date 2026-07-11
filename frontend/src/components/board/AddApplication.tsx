@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Plus } from 'lucide-react'
 import { createApplicationAction, type FormState } from '@/app/(app)/board/actions'
 import { Modal } from '@/components/ui/Modal'
@@ -11,6 +12,7 @@ const field =
 
 export function AddApplication({ seasonId }: { seasonId: string }) {
   const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const action = createApplicationAction.bind(null, seasonId)
   const [state, formAction, pending] = useActionState<FormState, FormData>(action, {})
 
@@ -18,15 +20,32 @@ export function AddApplication({ seasonId }: { seasonId: string }) {
     if (state.ok) setOpen(false)
   }, [state.ok])
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-white"
+        className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-white max-[640px]:hidden"
         style={{ boxShadow: '0 6px 18px -6px var(--accent)' }}
       >
         <Plus size={15} /> Log application
       </button>
+
+      {mounted &&
+        createPortal(
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Log application"
+            className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-4 z-30 hidden h-11 w-11 items-center justify-center rounded-full bg-accent text-white max-[640px]:flex"
+            style={{ boxShadow: '0 10px 24px -6px var(--accent)' }}
+          >
+            <Plus size={18} />
+          </button>,
+          document.body
+        )}
 
       {open && (
         <Modal title="Log application" onClose={() => setOpen(false)}>

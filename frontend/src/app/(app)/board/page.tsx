@@ -58,11 +58,11 @@ export default async function ApplicationBoardPage({
         </div>
       ) : (
         <div className="animate-launch overflow-hidden rounded-xl border border-line bg-surface">
-          <div className="grid grid-cols-[4px_1.3fr_120px_150px_110px_120px] gap-3.5 border-b border-line px-4 py-3 text-[10px] uppercase tracking-widest text-fg-3 max-[640px]:hidden">
+          <div className="grid grid-cols-[4px_1.3fr_120px_150px_110px_120px] gap-3.5 border-b border-line px-4 py-3 text-[10px] uppercase tracking-widest text-fg-3 max-[901px]:grid-cols-[4px_1fr_110px_120px] max-[640px]:hidden">
             <span />
             <span>Company / Role</span>
-            <span>Source</span>
-            <span>Pipeline</span>
+            <span className="max-[901px]:hidden">Source</span>
+            <span className="max-[901px]:hidden">Pipeline</span>
             <span>Stage</span>
             <span className="text-right">Age / Updated</span>
           </div>
