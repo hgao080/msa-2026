@@ -4,13 +4,13 @@ WORKDIR /src
 COPY Horme.API.csproj .
 RUN dotnet restore Horme.API.csproj
 
+COPY . .
+RUN dotnet publish Horme.API.csproj -c Release -o /app/publish --no-restore
+
 FROM build AS dev
 WORKDIR /src
 EXPOSE 8080
 CMD ["dotnet", "watch", "run", "--non-interactive", "--no-launch-profile", "--urls", "http://+:8080"]
-
-COPY . .
-RUN dotnet publish Horme.API.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
