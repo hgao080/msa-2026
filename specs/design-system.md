@@ -80,6 +80,7 @@ step is separable. Offer/Rejected/Withdrawn are semantic outliers.
 - **Dashboard** (`src/app/(app)/dashboard/`): `MomentumCurve` hero, stat readouts, `ConversionFunnel` (CSS bars), `ActivityHeatmap`, `InsightCallout` (dismiss persists per-type in localStorage), `MilestoneList`.
 - **Seasons** (`src/app/(app)/seasons/`): active season card (live stats) + `CloseSeason` modal + archived cards (cached final stats); `seasons/new` restyled to tokens.
 - **Auth** (`src/app/(auth)/login`, `/register`): skewed HORME wordmark + gloss line, shared token styling.
+- **Landing** (`src/app/page.tsx` → `components/landing/LandingPage.tsx`): public marketing page at `/`, gated open in `proxy.ts`'s `PUBLIC` list. Reuses `MomentumCurve`/`PipelineTrack`/`STATUS_COLOR` with an illustrative example season rather than duplicating their visuals as static markup.
 
 ### Shared primitives
 

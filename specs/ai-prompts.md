@@ -467,6 +467,23 @@ Required by MSA 2026 Phase 2 assessment.
 - The `animate-launch`-breaks-`fixed`-positioning gotcha has now bitten twice (`Modal.tsx`, then the board FAB) — worth remembering as a standing rule for this codebase: any new `position: fixed` element must be portaled to `document.body` if it (or an ancestor) can sit under an `.animate-launch` wrapper.
 - Tailwind v4's `max-[Npx]:` arbitrary variant is exclusive (`width < N`, not `width ≤ N`) — a general gotcha for any future arbitrary max-width breakpoint added here, not unique to this one fix.
 
+## Session 20 — 2026-07-12 — Public landing page
+
+**Prompts:**
+- "Could you make me a landing page for my application. Use relevant frontend skills."
+- "Anything to log into specs\ that hasn't already generally been from this session?"
+
+**Generated / decided:**
+- New `frontend/src/components/landing/LandingPage.tsx`, rendered from `app/page.tsx` (previously an unconditional `redirect('/dashboard')` — the app had no reachable public landing page).
+- `proxy.ts`'s `PUBLIC` route list gained `'/'` — it was gating every route behind the auth cookie except `/login`/`/register`, so `/` redirected to `/login` before the new page could ever render.
+- Fixed a latent SSR/CSR hydration mismatch in `ThemeToggle.tsx` (its `useState` initializer read `localStorage`/`matchMedia` directly, so the server always rendered "light" while the client's first render pass could resolve "dark") — split into a `mounted` guard + `useEffect`. Only surfaced now because `ThemeToggle` had never previously appeared on an unauthenticated/public page.
+- Verified live via `agent-browser` against the Turbopack dev server: light/dark, desktop (1440px) and mobile (iPhone 14 emulation) screenshots, console log check (no errors/warnings), confirmed the Next.js dev overlay's hydration-error badge cleared after the `ThemeToggle` fix.
+
+**Key design choices:**
+- Followed the already-locked Horme/Momentum identity (`specs/design-system.md`) rather than proposing a new one — the frontend-design skill's own guidance is to follow a brief's existing pinned direction. Reused real app components (`MomentumCurve`, `PipelineTrack`, `STATUS_COLOR`) with illustrative example-season data instead of re-implementing the visuals as static markup, so the landing page can't visually drift from the actual product.
+- Board preview rows are plain `<div>`s, not `ApplicationRow`/`Link` — deliberately non-navigable since they point at fake application IDs that don't exist for a logged-out visitor.
+- "Log. Track. Learn." pillar numbering (01/02/03) kept, since it reflects the real chronological order a user works through the product (season → board → insights), not decoration — the frontend-design skill explicitly warns against numbering content that isn't actually sequential.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)
