@@ -21,6 +21,39 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<DailyActivity>()
             .HasKey(da => new { da.UserId, da.Date });
 
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.Property(u => u.Email).HasMaxLength(255);
+            entity.Property(u => u.Username).HasMaxLength(50);
+            entity.Property(u => u.PasswordHash).HasMaxLength(60);
+        });
+
+        modelBuilder.Entity<Season>(entity =>
+        {
+            entity.Property(s => s.Name).HasMaxLength(100);
+            entity.Property(s => s.Goal).HasMaxLength(500);
+            entity.Property(s => s.Outcome).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<Application>(entity =>
+        {
+            entity.Property(a => a.Company).HasMaxLength(200);
+            entity.Property(a => a.Role).HasMaxLength(200);
+            entity.Property(a => a.JobPostingUrl).HasMaxLength(2048);
+            entity.Property(a => a.ReferrerName).HasMaxLength(100);
+            entity.Property(a => a.Notes).HasMaxLength(2000);
+        });
+
+        modelBuilder.Entity<ApplicationStage>()
+            .Property(s => s.Notes).HasMaxLength(2000);
+
+        modelBuilder.Entity<Milestone>(entity =>
+        {
+            entity.Property(m => m.Slug).HasMaxLength(50);
+            entity.Property(m => m.Name).HasMaxLength(100);
+            entity.Property(m => m.Description).HasMaxLength(500);
+        });
+
         modelBuilder.Entity<Milestone>().HasData(
             new Milestone { Id = Guid.Parse("11111111-1111-1111-1111-111111111001"), Slug = "first-application", Name = "First Application Sent", Description = "Sent your first application" },
             new Milestone { Id = Guid.Parse("11111111-1111-1111-1111-111111111002"), Slug = "ten-applications", Name = "10 Applications", Description = "Sent 10 applications" },
