@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import type { Application, ApplicationStage } from '@/types'
 import { sourceLabel } from '@/lib/status'
-import { formatDate } from '@/lib/date'
+import { LocalDate } from '@/components/LocalDate'
 import { PipelineTrack } from '@/components/PipelineTrack'
 import { StatusControl } from './StatusControl'
 import { EditApplication } from './EditApplication'
@@ -46,11 +46,11 @@ export function ApplicationDetail({ app }: { app: Application }) {
         </div>
         <div>
           <dt className="text-[10px] uppercase tracking-widest text-fg-3">Applied</dt>
-          <dd className="mt-1 text-sm text-fg">{formatDate(optimisticApp.appliedDate)}</dd>
+          <dd className="mt-1 text-sm text-fg"><LocalDate iso={optimisticApp.appliedDate} /></dd>
         </div>
         <div>
           <dt className="text-[10px] uppercase tracking-widest text-fg-3">Last updated</dt>
-          <dd className="mt-1 text-sm text-fg">{formatDate(optimisticApp.lastUpdated)}</dd>
+          <dd className="mt-1 text-sm text-fg"><LocalDate iso={optimisticApp.lastUpdated} /></dd>
         </div>
         {optimisticApp.referrerName && (
           <div>

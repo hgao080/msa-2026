@@ -10,7 +10,7 @@ import {
   deleteStageAction,
   type FormState,
 } from '@/app/(app)/applications/[id]/actions'
-import { formatDate } from '@/lib/date'
+import { LocalDate } from '@/components/LocalDate'
 import type { ApplicationPatch } from './ApplicationDetail'
 
 const STAGE_TYPES = ['OA', 'PhoneScreen', 'Technical', 'Behavioural']
@@ -156,11 +156,13 @@ function StageRow({
             <div>
               <p className="font-display text-sm font-semibold text-fg">{stage.type}</p>
               <p className="text-xs text-fg-3">
-                {stage.status === 'Completed' && stage.completedDate
-                  ? `Completed ${formatDate(stage.completedDate)}`
-                  : stage.scheduledDate
-                    ? `Scheduled ${formatDate(stage.scheduledDate)}`
-                    : stage.status}
+                {stage.status === 'Completed' && stage.completedDate ? (
+                  <>Completed <LocalDate iso={stage.completedDate} /></>
+                ) : stage.scheduledDate ? (
+                  <>Scheduled <LocalDate iso={stage.scheduledDate} /></>
+                ) : (
+                  stage.status
+                )}
               </p>
             </div>
             <div className="flex items-center gap-2">
