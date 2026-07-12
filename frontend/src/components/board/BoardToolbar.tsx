@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { STATUSES, SOURCES, sourceLabel } from '@/lib/status'
+import type { ApplicationStatus } from '@/types'
 
 const SORTS = [
   { key: 'pipeline', label: 'Stage' },
@@ -10,38 +9,22 @@ const SORTS = [
   { key: 'lastUpdated', label: 'Updated' },
 ]
 
-export function BoardToolbar() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const params = useSearchParams()
+export interface BoardFilters {
+  sort: string
+  order: 'asc' | 'desc'
+  status: ApplicationStatus | ''
+  source: string
+  company: string
+}
 
-  const sort = params.get('sort') ?? 'pipeline'
-  const order = params.get('order') ?? 'desc'
-  const status = params.get('status') ?? ''
-  const source = params.get('source') ?? ''
-  const [company, setCompany] = useState(params.get('company') ?? '')
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  function set(next: Record<string, string>) {
-    const p = new URLSearchParams(params.toString())
-    for (const [k, v] of Object.entries(next)) {
-      if (v) p.set(k, v)
-      else p.delete(k)
-    }
-    router.push(`${pathname}?${p.toString()}`)
-  }
-
-  function onCompanyChange(value: string) {
-    setCompany(value)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => set({ company: value }), 300)
-  }
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [])
+export function BoardToolbar({
+  filters,
+  onChange,
+}: {
+  filters: BoardFilters
+  onChange: (next: Partial<BoardFilters>) => void
+}) {
+  const { sort, order, status, source, company } = filters
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
@@ -51,7 +34,7 @@ export function BoardToolbar() {
         return (
           <button
             key={s.key}
-            onClick={() => set({ sort: s.key })}
+            onClick={() => onChange({ sort: s.key })}
             aria-pressed={active}
             className={`relative rounded-md border px-3 py-1.5 ${
               active ? 'border-accent text-fg' : 'border-line text-fg-2 hover:text-fg'
@@ -67,7 +50,7 @@ export function BoardToolbar() {
         )
       })}
       <button
-        onClick={() => set({ order: order === 'asc' ? 'desc' : 'asc' })}
+        onClick={() => onChange({ order: order === 'asc' ? 'desc' : 'asc' })}
         className="rounded-md border border-line px-2.5 py-1.5 text-fg-2 hover:text-fg"
         aria-label={`Sort ${order === 'asc' ? 'ascending' : 'descending'}`}
       >
@@ -77,7 +60,7 @@ export function BoardToolbar() {
       <input
         type="text"
         value={company}
-        onChange={(e) => onCompanyChange(e.target.value)}
+        onChange={(e) => onChange({ company: e.target.value })}
         placeholder="search company…"
         aria-label="Search by company"
         className="min-w-0 flex-1 basis-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-fg placeholder:text-fg-3 sm:basis-40"
@@ -86,7 +69,7 @@ export function BoardToolbar() {
       <span className="ml-2 text-[10px] uppercase tracking-widest text-fg-3">filter</span>
       <select
         value={status}
-        onChange={(e) => set({ status: e.target.value })}
+        onChange={(e) => onChange({ status: e.target.value as ApplicationStatus | '' })}
         aria-label="Filter by status"
         className="min-w-0 flex-1 basis-32 rounded-md border border-line bg-surface px-2.5 py-1.5 text-fg"
       >
@@ -97,7 +80,7 @@ export function BoardToolbar() {
       </select>
       <select
         value={source}
-        onChange={(e) => set({ source: e.target.value })}
+        onChange={(e) => onChange({ source: e.target.value })}
         aria-label="Filter by source"
         className="min-w-0 flex-1 basis-32 rounded-md border border-line bg-surface px-2.5 py-1.5 text-fg"
       >

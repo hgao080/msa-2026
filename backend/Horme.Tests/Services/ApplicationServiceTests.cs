@@ -252,7 +252,7 @@ public class ApplicationServiceTests
     }
 
     [Fact]
-    public async Task GetApplicationsAsync_FilterByCompany_ReturnsMatchesOnly()
+    public async Task GetApplicationsAsync_ReturnsAllApplicationsForSeason()
     {
         using var db = CreateDb();
         var (userId, seasonId) = await SeedSeason(db);
@@ -260,24 +260,9 @@ public class ApplicationServiceTests
         await service.CreateApplicationAsync(seasonId, userId, ValidRequest("Atlassian"));
         await service.CreateApplicationAsync(seasonId, userId, ValidRequest("Canva"));
 
-        var results = await service.GetApplicationsAsync(seasonId, userId, null, null, null, null, "Canva");
+        var results = await service.GetApplicationsAsync(seasonId, userId);
 
-        Assert.Single(results);
-        Assert.Equal("Canva", results[0].Company);
-    }
-
-    [Fact]
-    public async Task GetApplicationsAsync_SortByCompanyDescending_OrdersCorrectly()
-    {
-        using var db = CreateDb();
-        var (userId, seasonId) = await SeedSeason(db);
-        var service = CreateService(db);
-        await service.CreateApplicationAsync(seasonId, userId, ValidRequest("Atlassian"));
-        await service.CreateApplicationAsync(seasonId, userId, ValidRequest("Canva"));
-
-        var results = await service.GetApplicationsAsync(seasonId, userId, null, null, "company", "desc");
-
-        Assert.Equal(["Canva", "Atlassian"], results.Select(a => a.Company));
+        Assert.Equal(2, results.Count);
     }
 
     [Fact]
@@ -288,6 +273,6 @@ public class ApplicationServiceTests
         var service = CreateService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            service.GetApplicationsAsync(seasonId, Guid.NewGuid(), null, null, null, null));
+            service.GetApplicationsAsync(seasonId, Guid.NewGuid()));
     }
 }

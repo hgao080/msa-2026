@@ -1,5 +1,5 @@
-import { apiFetch, query } from './api'
-import type { Application, ApplicationStage, ApplicationStatus } from '@/types'
+import { apiFetch } from './api'
+import type { Application, ApplicationStage } from '@/types'
 
 export interface CreateApplicationData {
   company: string
@@ -11,10 +11,8 @@ export interface CreateApplicationData {
   notes?: string
 }
 
-export const getApplications = (
-  seasonId: string,
-  params?: { status?: ApplicationStatus; source?: string; sort?: string; order?: string; company?: string }
-) => apiFetch<Application[]>(`/api/seasons/${seasonId}/applications${query(params)}`)
+export const getApplications = (seasonId: string) =>
+  apiFetch<Application[]>(`/api/seasons/${seasonId}/applications`)
 
 export const getApplication = (id: string) => apiFetch<Application>(`/api/applications/${id}`)
 

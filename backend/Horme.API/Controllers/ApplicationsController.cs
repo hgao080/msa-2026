@@ -9,12 +9,10 @@ namespace Horme.API.Controllers;
 public class ApplicationsController(ApplicationService applicationService) : AppControllerBase
 {
 [HttpGet("seasons/{seasonId:guid}/applications")]
-    public async Task<IActionResult> GetApplications(Guid seasonId,
-        [FromQuery] string? status, [FromQuery] string? source,
-        [FromQuery] string? sort, [FromQuery] string? order, [FromQuery] string? company)
+    public async Task<IActionResult> GetApplications(Guid seasonId)
     {
-        var apps = await applicationService.GetApplicationsAsync(seasonId, GetUserId(), status, source, sort, order, company);
-        
+        var apps = await applicationService.GetApplicationsAsync(seasonId, GetUserId());
+
         return Ok(apps);
     }
 

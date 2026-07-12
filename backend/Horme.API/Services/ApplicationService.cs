@@ -17,40 +17,15 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
             db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today });
     }
 
-    public async Task<List<ApplicationDto>> GetApplicationsAsync(Guid seasonId, Guid userId, string? status,
-        string? source, string? sort, string? order, string? company = null)
+    public async Task<List<ApplicationDto>> GetApplicationsAsync(Guid seasonId, Guid userId)
     {
         var seasonExists = await db.Seasons.AnyAsync(s => s.Id == seasonId && s.UserId == userId);
         if (!seasonExists) throw new NotFoundException("Season not found");
 
-        var query = db.Applications
+        var apps = await db.Applications
             .Include(a => a.Stages)
-            .Where(a => a.SeasonId == seasonId && a.UserId == userId);
-
-        if (!string.IsNullOrEmpty(status) && Enum.TryParse<ApplicationStatus>(status, out var s))
-            query = query.Where(a => a.Status == s);
-
-        if (!string.IsNullOrEmpty(source) && Enum.TryParse<ApplicationSource>(source, out var src))
-            query = query.Where(a => a.Source == src);
-
-        if (!string.IsNullOrEmpty(company))
-            query = query.Where(a => a.Company.Contains(company));
-
-        var apps = await query.ToListAsync();
-
-        apps = (sort, order?.ToLower() == "desc") switch
-        {
-            ("company", false) => apps.OrderBy(a => a.Company).ToList(),
-            ("company", true) => apps.OrderByDescending(a => a.Company).ToList(),
-            ("lastUpdated", false) => apps.OrderBy(a => a.LastUpdated).ToList(),
-            ("lastUpdated", true) => apps.OrderByDescending(a => a.LastUpdated).ToList(),
-            ("appliedDate", false) => apps.OrderBy(a => a.AppliedDate).ToList(),
-            ("appliedDate", true) => apps.OrderByDescending(a => a.AppliedDate).ToList(),
-            (_, false) => apps.OrderBy(a => a.Status == ApplicationStatus.Rejected)
-                .ThenBy(a => ApplicationStats.PipelineLevel(a)).ToList(),
-            (_, true) => apps.OrderBy(a => a.Status == ApplicationStatus.Rejected)
-                .ThenByDescending(a => ApplicationStats.PipelineLevel(a)).ToList(),
-        };
+            .Where(a => a.SeasonId == seasonId && a.UserId == userId)
+            .ToListAsync();
 
         return apps.Select(ToDto).ToList();
     }
