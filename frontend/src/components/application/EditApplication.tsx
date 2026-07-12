@@ -6,11 +6,18 @@ import type { Application } from '@/types'
 import { updateApplicationAction, type FormState } from '@/app/(app)/applications/[id]/actions'
 import { Modal } from '@/components/ui/Modal'
 import { SOURCES, sourceLabel } from '@/lib/status'
+import type { ApplicationPatch } from './ApplicationDetail'
 
 const field =
   'w-full rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent'
 
-export function EditApplication({ app }: { app: Application }) {
+export function EditApplication({
+  app,
+  onOptimistic,
+}: {
+  app: Application
+  onOptimistic: (patch: ApplicationPatch) => void
+}) {
   const [open, setOpen] = useState(false)
   const action = updateApplicationAction.bind(null, app.id)
   const [state, formAction, pending] = useActionState<FormState, FormData>(action, {})
@@ -18,6 +25,17 @@ export function EditApplication({ app }: { app: Application }) {
   useEffect(() => {
     if (state.ok) setOpen(false)
   }, [state.ok])
+
+  function clientAction(formData: FormData) {
+    onOptimistic({
+      company: String(formData.get('company') ?? '').trim(),
+      role: String(formData.get('role') ?? '').trim(),
+      source: String(formData.get('source') ?? app.source) as Application['source'],
+      jobPostingUrl: String(formData.get('jobPostingUrl') ?? '') || undefined,
+      notes: String(formData.get('notes') ?? '') || undefined,
+    })
+    return formAction(formData)
+  }
 
   return (
     <>
@@ -30,7 +48,7 @@ export function EditApplication({ app }: { app: Application }) {
 
       {open && (
         <Modal title="Edit application" onClose={() => setOpen(false)}>
-          <form action={formAction} className="space-y-3">
+          <form action={clientAction} className="space-y-3">
               <label className="block">
                 <span className="mb-1 block text-xs text-fg-2">Company *</span>
                 <input name="company" required defaultValue={app.company} className={field} />

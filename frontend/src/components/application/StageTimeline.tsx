@@ -11,9 +11,12 @@ import {
   type FormState,
 } from '@/app/(app)/applications/[id]/actions'
 import { formatDate } from '@/lib/date'
+import type { ApplicationPatch } from './ApplicationDetail'
 
 const STAGE_TYPES = ['OA', 'PhoneScreen', 'Technical', 'Behavioural']
 const STAGE_STATUSES: ApplicationStage['status'][] = ['Upcoming', 'Completed', 'Failed']
+
+type StagesProps = { stages: ApplicationStage[]; onOptimistic: (patch: ApplicationPatch) => void }
 
 function dotStyle(status: ApplicationStage['status']) {
   if (status === 'Completed') return { background: 'var(--win)', borderColor: 'var(--win)' }
@@ -21,27 +24,54 @@ function dotStyle(status: ApplicationStage['status']) {
   return { background: 'transparent', borderColor: 'var(--fg-3)' }
 }
 
-function StageStatusPicker({ appId, stage }: { appId: string; stage: ApplicationStage }) {
+function StageStatusPicker({ appId, stage, stages, onOptimistic }: { appId: string; stage: ApplicationStage } & StagesProps) {
   const [pending, start] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
   return (
-    <div className="flex gap-1">
-      {STAGE_STATUSES.map((s) => (
-        <button
-          key={s}
-          disabled={pending || s === stage.status}
-          onClick={() => start(() => void updateStageStatusAction(appId, stage.id, s))}
-          className={`rounded px-2 py-0.5 text-[10px] uppercase tracking-wide transition-colors ${
-            s === stage.status ? 'bg-accent-soft text-accent' : 'text-fg-3 hover:text-fg'
-          }`}
-        >
-          {s}
-        </button>
-      ))}
+    <div className="flex flex-col gap-1">
+      <div className="flex gap-1">
+        {STAGE_STATUSES.map((s) => (
+          <button
+            key={s}
+            disabled={pending || s === stage.status}
+            onClick={() => {
+              setError(null)
+              start(async () => {
+                onOptimistic({
+                  stages: stages.map((st) =>
+                    st.id === stage.id
+                      ? { ...st, status: s, completedDate: s === 'Completed' ? new Date().toISOString() : st.completedDate }
+                      : st
+                  ),
+                })
+                try {
+                  await updateStageStatusAction(appId, stage.id, s)
+                } catch {
+                  setError('Failed to update.')
+                }
+              })
+            }}
+            className={`rounded px-2 py-0.5 text-[10px] uppercase tracking-wide transition-colors ${
+              s === stage.status ? 'bg-accent-soft text-accent' : 'text-fg-3 hover:text-fg'
+            }`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+      {error && <p className="text-[10px] text-lose">{error}</p>}
     </div>
   )
 }
 
-function StageEditForm({ appId, stage, onDone }: { appId: string; stage: ApplicationStage; onDone: () => void }) {
+function StageEditForm({
+  appId,
+  stage,
+  stages,
+  onOptimistic,
+  onDone,
+}: { appId: string; stage: ApplicationStage; onDone: () => void } & StagesProps) {
   const action = editStageAction.bind(null, appId, stage.id)
   const [state, formAction, pending] = useActionState<FormState, FormData>(action, {})
 
@@ -49,8 +79,16 @@ function StageEditForm({ appId, stage, onDone }: { appId: string; stage: Applica
     if (state.ok) onDone()
   }, [state.ok, onDone])
 
+  function clientAction(formData: FormData) {
+    const type = String(formData.get('type') ?? stage.type) as ApplicationStage['type']
+    const scheduledDate = String(formData.get('scheduledDate') ?? '') || undefined
+    const notes = String(formData.get('notes') ?? '') || undefined
+    onOptimistic({ stages: stages.map((st) => (st.id === stage.id ? { ...st, type, scheduledDate, notes } : st)) })
+    return formAction(formData)
+  }
+
   return (
-    <form action={formAction} className="space-y-3 rounded-lg border border-line bg-surface-2 p-4">
+    <form action={clientAction} className="space-y-3 rounded-lg border border-line bg-surface-2 p-4">
       <div className="flex flex-wrap gap-3">
         <label className="block">
           <span className="mb-1 block text-xs text-fg-2">Type</span>
@@ -97,7 +135,13 @@ function StageEditForm({ appId, stage, onDone }: { appId: string; stage: Applica
   )
 }
 
-function StageRow({ appId, stage }: { appId: string; stage: ApplicationStage }) {
+function StageRow({
+  appId,
+  stage,
+  stages,
+  onOptimistic,
+  onDeleteError,
+}: { appId: string; stage: ApplicationStage; onDeleteError: (msg: string | null) => void } & StagesProps) {
   const [editing, setEditing] = useState(false)
   const [deleting, startDelete] = useTransition()
 
@@ -105,7 +149,7 @@ function StageRow({ appId, stage }: { appId: string; stage: ApplicationStage }) 
     <li className="relative">
       <span className="absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2" style={dotStyle(stage.status)} />
       {editing ? (
-        <StageEditForm appId={appId} stage={stage} onDone={() => setEditing(false)} />
+        <StageEditForm appId={appId} stage={stage} stages={stages} onOptimistic={onOptimistic} onDone={() => setEditing(false)} />
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -120,14 +164,23 @@ function StageRow({ appId, stage }: { appId: string; stage: ApplicationStage }) 
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <StageStatusPicker appId={appId} stage={stage} />
+              <StageStatusPicker appId={appId} stage={stage} stages={stages} onOptimistic={onOptimistic} />
               <button onClick={() => setEditing(true)} aria-label="Edit stage" className="text-fg-3 hover:text-fg">
                 <Pencil size={13} />
               </button>
               <button
                 disabled={deleting}
                 onClick={() => {
-                  if (confirm('Delete this stage?')) startDelete(() => void deleteStageAction(appId, stage.id))
+                  if (!confirm('Delete this stage?')) return
+                  onDeleteError(null)
+                  startDelete(async () => {
+                    onOptimistic({ stages: stages.filter((st) => st.id !== stage.id) })
+                    try {
+                      await deleteStageAction(appId, stage.id)
+                    } catch {
+                      onDeleteError('Failed to delete stage — restored.')
+                    }
+                  })
                 }}
                 aria-label="Delete stage"
                 className="text-fg-3 hover:text-lose disabled:opacity-50"
@@ -143,8 +196,9 @@ function StageRow({ appId, stage }: { appId: string; stage: ApplicationStage }) 
   )
 }
 
-export function StageTimeline({ appId, stages }: { appId: string; stages: ApplicationStage[] }) {
+export function StageTimeline({ appId, stages, onOptimistic }: { appId: string } & StagesProps) {
   const [open, setOpen] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const action = addStageAction.bind(null, appId)
   const [state, formAction, pending] = useActionState<FormState, FormData>(action, {})
 
@@ -156,13 +210,22 @@ export function StageTimeline({ appId, stages }: { appId: string; stages: Applic
     <section>
       <h2 className="mb-4 font-display text-lg font-semibold text-fg">Stages</h2>
 
+      {deleteError && <p className="mb-3 text-sm text-lose">{deleteError}</p>}
+
       {stages.length === 0 && !open && (
         <p className="mb-4 text-sm text-fg-2">No stages yet — add interviews and assessments as they come up.</p>
       )}
 
       <ol className="relative space-y-5 border-l border-line pl-6">
         {stages.map((stage) => (
-          <StageRow key={stage.id} appId={appId} stage={stage} />
+          <StageRow
+            key={stage.id}
+            appId={appId}
+            stage={stage}
+            stages={stages}
+            onOptimistic={onOptimistic}
+            onDeleteError={setDeleteError}
+          />
         ))}
       </ol>
 
