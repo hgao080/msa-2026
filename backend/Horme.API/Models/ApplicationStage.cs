@@ -14,5 +14,5 @@ public class ApplicationStage
     public Application Application { get; set; } = null!;
 }
 
-public enum StageType { OA, PhoneScreen, Technical, Behavioural }
+public enum StageType { Oa, PhoneScreen, Technical, Behavioural }
 public enum StageStatus { Upcoming, Completed, Failed }

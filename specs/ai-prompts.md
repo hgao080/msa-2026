@@ -484,6 +484,28 @@ Required by MSA 2026 Phase 2 assessment.
 - Board preview rows are plain `<div>`s, not `ApplicationRow`/`Link` — deliberately non-navigable since they point at fake application IDs that don't exist for a logged-out visitor.
 - "Log. Track. Learn." pillar numbering (01/02/03) kept, since it reflects the real chronological order a user works through the product (season → board → insights), not decoration — the frontend-design skill explicitly warns against numbering content that isn't actually sequential.
 
+## Session 21 — 2026-07-12 — Memory audit + backend architecture cleanup
+
+**Prompts:**
+- "I'd like to do some cleanup regarding the codebase. Let's start with your memory. Audit what you know comparing against what exists in the codebase. If something conflicts use the code as the source of truth. If anything is unclear ask me."
+- "Something else I had in mind is auditing my backend and ensuring good, clean and maintainable architecture, removing anything that is stale or redundant, ensuring no code is duplicated if so extracting out into util functions and files are separated out into correct domains."
+- "Commit now using caveman commit to generate message"
+- "log this session in specs/ai-prompts.md"
+
+**Generated / decided:**
+- Audited Claude's cross-session memory against actual repo state: corrected a stale note claiming `CLAUDE.md` still mentioned SQLite (it doesn't), and folded in Session 20 plus 4 previously-unlogged commits (fg-3 contrast fix, board sort/filter moved client-side, application optimistic updates, client-only date rendering). Dropped an old "branch silently changed dev→main" flag from Session 19 per user (not worth tracking further).
+- Read all 24 backend source files (controllers/services/DTOs/models/helpers) and diffed against actual usage (grep across backend + frontend + tests) to separate real dead code from merely-quiet code.
+- `ApplicationService`: extracted `GetOwnedApplicationAsync` (fetch app by id+userId with 404, was duplicated in 9 methods) and `Touch` (recompute status + bump `LastUpdated`, duplicated in 7 methods).
+- Moved `ToSeasonDto` out of `DashboardService` into `SeasonService` — it mapped `Season`, not dashboard data; `SeasonService` was calling into `DashboardService` for its own entity's mapper.
+- Removed confirmed-dead code: `ApplicationStats.PipelineLevel` (unused anywhere, no test coverage), `GET /api/seasons/{id}/insights` list endpoint + frontend `getInsights()` (dashboard only ever used `TopInsight`), `StatsDto.TotalInterviews` (+ frontend type field) — all verified unused via grep before deletion, confirmed via `AskUserQuestion` since removing them touches the API contract.
+- Verified: `dotnet build` + `dotnet test` (63/63 passing), frontend `tsc --noEmit` clean, `vitest run` (50/50 passing).
+- Committed as `78c7b9d` on `dev` via the `caveman-commit` skill.
+
+**Key design choices:**
+- Found and fixed a real bug while auditing, not asked for: `MilestoneService`, `DashboardService`, and `InsightService` each independently computed "start of this week" as `DateTime.UtcNow.AddDays(-(int)DayOfWeek)` without truncating to midnight. On a Sunday (`DayOfWeek == 0`) that's a no-op, so `thisWeekStart` sits at the current instant instead of midnight — any activity logged even milliseconds earlier reads as "not this week." This is exactly why `MilestoneServiceTests.CheckAndUnlockMilestones_WeeklyTargetHit_UnlocksWeeklyTarget` failed mid-session (2026-07-12 is a Sunday). Fixed by extracting `ApplicationStats.StartOfWeek(DateTime)` (truncates via `.Date` first) and using it in all three call sites — same fix serves both the correctness bug and the duplication cleanup the user asked for.
+- Asked the user before removing the three dead-but-flagged items rather than deleting silently, since they touch the public API surface (an endpoint, a DTO field) rather than being purely internal — user chose to remove all three.
+- Left `GetOwnedApplicationAsync`'s `includeStages` as an opt-out parameter (default `true`) rather than always including, to preserve `DeleteApplicationAsync`'s existing no-include behavior instead of silently adding an unnecessary join.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)

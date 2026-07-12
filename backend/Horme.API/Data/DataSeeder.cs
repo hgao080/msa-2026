@@ -162,7 +162,7 @@ public static class DataSeeder
     {
         var progression = new[]
         {
-            StageType.OA, StageType.PhoneScreen, StageType.Technical, StageType.Behavioural
+            StageType.Oa, StageType.PhoneScreen, StageType.Technical, StageType.Behavioural
         };
         reachedCount = Math.Min(reachedCount, progression.Length);
 

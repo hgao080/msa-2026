@@ -21,4 +21,4 @@ public class Application
 }
 
 public enum ApplicationSource { LinkedIn, Seek, Referral, CompanyWebsite, Other }
-public enum ApplicationStatus { Applied, OA, PhoneScreen, Technical, Behavioural, Offer, Rejected, Withdrawn }
+public enum ApplicationStatus { Applied, Oa, PhoneScreen, Technical, Behavioural, Offer, Rejected, Withdrawn }

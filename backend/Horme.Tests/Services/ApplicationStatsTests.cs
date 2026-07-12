@@ -92,7 +92,7 @@ public class ApplicationStatsTests
     public void ResponseRate_WithdrawnWithStage_CountsAsResponded()
     {
         var withdrawnWithStage = new Application { Status = ApplicationStatus.Withdrawn };
-        withdrawnWithStage.Stages.Add(new ApplicationStage { Type = StageType.OA, Status = StageStatus.Completed });
+        withdrawnWithStage.Stages.Add(new ApplicationStage { Type = StageType.Oa, Status = StageStatus.Completed });
         var withdrawnNoStage = new Application { Status = ApplicationStatus.Withdrawn };
 
         var apps = new List<Application> { withdrawnWithStage, withdrawnNoStage };
@@ -125,7 +125,7 @@ public class ApplicationStatsTests
     public void ComputeStatus_UsesLatestStageByCreatedAt()
     {
         var app = AppWithStages(
-            Stage(StageType.OA, StageStatus.Completed, createdDaysAgo: 5),
+            Stage(StageType.Oa, StageStatus.Completed, createdDaysAgo: 5),
             Stage(StageType.Technical, StageStatus.Completed, createdDaysAgo: 1));
 
         Assert.Equal(ApplicationStatus.Technical, ApplicationStats.ComputeStatus(app));
@@ -135,7 +135,7 @@ public class ApplicationStatsTests
     public void ComputeStatus_LatestStageFailed_ReturnsRejected()
     {
         var app = AppWithStages(
-            Stage(StageType.OA, StageStatus.Completed, createdDaysAgo: 5),
+            Stage(StageType.Oa, StageStatus.Completed, createdDaysAgo: 5),
             Stage(StageType.Technical, StageStatus.Failed, createdDaysAgo: 1));
 
         Assert.Equal(ApplicationStatus.Rejected, ApplicationStats.ComputeStatus(app));
@@ -144,7 +144,7 @@ public class ApplicationStatsTests
     [Fact]
     public void ComputeStatus_WithdrawnAtSet_ReturnsWithdrawn()
     {
-        var app = AppWithStages(Stage(StageType.OA, StageStatus.Completed, createdDaysAgo: 1));
+        var app = AppWithStages(Stage(StageType.Oa, StageStatus.Completed, createdDaysAgo: 1));
         app.WithdrawnAt = DateTime.UtcNow;
 
         Assert.Equal(ApplicationStatus.Withdrawn, ApplicationStats.ComputeStatus(app));
