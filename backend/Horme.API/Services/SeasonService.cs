@@ -15,8 +15,8 @@ public class SeasonService(AppDbContext db)
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.StartDate)
             .ToListAsync();
-        
-        return seasons.Select(DashboardService.ToSeasonDto).ToList();
+
+        return seasons.Select(ToSeasonDto).ToList();
     }
 
     public async Task<SeasonDto> GetSeasonAsync(Guid seasonId, Guid userId)
@@ -24,8 +24,8 @@ public class SeasonService(AppDbContext db)
         var season = await db.Seasons
             .FirstOrDefaultAsync(s => s.Id == seasonId && s.UserId == userId)
             ?? throw new NotFoundException("Season not found");
-        
-        return DashboardService.ToSeasonDto(season);
+
+        return ToSeasonDto(season);
     }
 
     public async Task<SeasonDto> CreateSeasonAsync(CreateSeasonRequest request, Guid userId)
@@ -42,7 +42,7 @@ public class SeasonService(AppDbContext db)
         db.Seasons.Add(season);
         await db.SaveChangesAsync();
         
-        return DashboardService.ToSeasonDto(season);
+        return ToSeasonDto(season);
     }
 
     public async Task<SeasonDto> UpdateSeasonAsync(Guid seasonId, Guid userId, UpdateSeasonRequest request)
@@ -55,8 +55,8 @@ public class SeasonService(AppDbContext db)
         if (request.Goal != null) season.Goal = request.Goal;
         if (request.WeeklyTarget.HasValue) season.WeeklyTarget = request.WeeklyTarget.Value;
         await db.SaveChangesAsync();
-        
-        return DashboardService.ToSeasonDto(season);
+
+        return ToSeasonDto(season);
     }
 
     public async Task<SeasonDto> CloseSeasonAsync(Guid seasonId, Guid userId, string? outcome)
@@ -83,7 +83,24 @@ public class SeasonService(AppDbContext db)
         season.FinalOfferCount = apps.Count(a => a.Status == ApplicationStatus.Offer);
         season.FinalStreakDays = ApplicationStats.LongestStreak(activities);
         await db.SaveChangesAsync();
-        
-        return DashboardService.ToSeasonDto(season);
+
+        return ToSeasonDto(season);
     }
+
+    public static SeasonDto ToSeasonDto(Season s) => new(
+        s.Id,
+        s.UserId,
+        s.Name,
+        s.Goal,
+        s.WeeklyTarget,
+        s.Status.ToString(),
+        s.StartDate,
+        s.EndDate,
+        s.Outcome,
+        s.FinalApplicationCount,
+        s.FinalResponseRate,
+        s.FinalInterviewCount,
+        s.FinalOfferCount,
+        s.FinalStreakDays
+    );
 }

@@ -12,7 +12,6 @@ public record DashboardDto(
 public record StatsDto(
     int TotalApplications,
     double ResponseRate,
-    int TotalInterviews,
     int CurrentStreak,
     int LongestStreak,
     int WeeklyProgress,

@@ -86,7 +86,6 @@ export interface DashboardData {
   stats: {
     totalApplications: number
     responseRate: number
-    totalInterviews: number
     currentStreak: number
     longestStreak: number
     weeklyProgress: number

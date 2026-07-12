@@ -4,6 +4,9 @@ namespace Horme.API.Helpers;
 
 public static class ApplicationStats
 {
+    public static DateTime StartOfWeek(DateTime reference) =>
+        reference.Date.AddDays(-(int)reference.DayOfWeek);
+
     public static ApplicationStatus ComputeStatus(Application app)
     {
         if (app.OfferedAt.HasValue) return ApplicationStatus.Offer;
@@ -13,18 +16,6 @@ public static class ApplicationStats
         var latest = app.Stages.OrderByDescending(s => s.CreatedAt).First();
         if (latest.Status == StageStatus.Failed) return ApplicationStatus.Rejected;
         return Enum.Parse<ApplicationStatus>(latest.Type.ToString());
-    }
-
-    // furthest stage type reached, not most recent — matches how companies actually gate rounds
-    public static int PipelineLevel(Application app)
-    {
-        if (app.OfferedAt.HasValue) return 5;
-
-        var level = 1;
-        if (app.Stages.Any(s => s.Type is StageType.OA or StageType.PhoneScreen)) level = 2;
-        if (app.Stages.Any(s => s.Type == StageType.Technical)) level = 3;
-        if (app.Stages.Any(s => s.Type == StageType.Behavioural)) level = 4;
-        return level;
     }
 
     // any interview-stage record counts, even if later withdrawn — the company still responded

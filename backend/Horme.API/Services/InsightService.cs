@@ -26,7 +26,7 @@ public class InsightService(AppDbContext db)
             .ToListAsync();
 
         var today = DateTime.UtcNow;
-        var thisWeekStart = today.AddDays(-(int)today.DayOfWeek);
+        var thisWeekStart = ApplicationStats.StartOfWeek(today);
         var insights = new List<InsightDto>();
 
         var streak = ApplicationStats.CurrentStreak(activities);

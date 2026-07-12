@@ -26,7 +26,7 @@ public class MilestoneService(AppDbContext db)
 
         var season = await db.Seasons.FindAsync(seasonId);
         var streak = ApplicationStats.CurrentStreak(activities);
-        var thisWeekStart = DateTime.UtcNow.AddDays(-(int)DateTime.UtcNow.DayOfWeek);
+        var thisWeekStart = ApplicationStats.StartOfWeek(DateTime.UtcNow);
         var thisWeekCount = apps.Count(a => a.AppliedDate >= thisWeekStart);
 
         var newUnlocks = (from milestone in allMilestones.Where(m => !alreadyUnlocked.Contains(m.Id))

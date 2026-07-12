@@ -38,7 +38,7 @@ public class DashboardService(AppDbContext db)
             .ToListAsync();
 
         var today = DateTime.UtcNow;
-        var thisWeekStart = today.AddDays(-(int)today.DayOfWeek);
+        var thisWeekStart = ApplicationStats.StartOfWeek(today);
         var weeklyProgress = apps.Count(a => a.AppliedDate >= thisWeekStart);
 
         var appsByWeek = apps
@@ -80,11 +80,10 @@ public class DashboardService(AppDbContext db)
                 unlocked?.UnlockedAt.ToString("o"));
         }).ToList();
 
-        var seasonDto = ToSeasonDto(season);
+        var seasonDto = SeasonService.ToSeasonDto(season);
         var stats = new StatsDto(
             apps.Count,
-            responseRate, 
-            apps.SelectMany(a => a.Stages).Count(),
+            responseRate,
             currentStreak,
             longestStreak,
             weeklyProgress,
@@ -93,27 +92,10 @@ public class DashboardService(AppDbContext db)
 
         return new DashboardDto(
             seasonDto,
-            stats, 
-            CalculateFunnel(apps), 
-            null, 
-            heatmap, 
+            stats,
+            CalculateFunnel(apps),
+            null,
+            heatmap,
             milestones);
     }
-
-    public static SeasonDto ToSeasonDto(Season s) => new(
-        s.Id,
-        s.UserId, 
-        s.Name,
-        s.Goal,
-        s.WeeklyTarget,
-        s.Status.ToString(),
-        s.StartDate,
-        s.EndDate,
-        s.Outcome,
-        s.FinalApplicationCount,
-        s.FinalResponseRate,
-        s.FinalInterviewCount,
-        s.FinalOfferCount,
-        s.FinalStreakDays
-    );
 }

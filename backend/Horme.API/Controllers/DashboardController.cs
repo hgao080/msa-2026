@@ -20,12 +20,4 @@ public class DashboardController(DashboardService dashboardService, InsightServi
         
         return Ok(result);
     }
-
-    [HttpGet("insights")]
-    public async Task<IActionResult> GetInsights(Guid seasonId)
-    {
-        var insights = await insightService.GetInsightsAsync(GetUserId(), seasonId);
-        
-        return Ok(insights);
-    }
 }

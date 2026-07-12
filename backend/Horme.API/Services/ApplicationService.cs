@@ -17,6 +17,21 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
             db.DailyActivities.Add(new DailyActivity { UserId = userId, Date = today });
     }
 
+    private async Task<Application> GetOwnedApplicationAsync(Guid id, Guid userId, bool includeStages = true)
+    {
+        var query = db.Applications.AsQueryable();
+        if (includeStages) query = query.Include(a => a.Stages);
+
+        return await query.FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
+               ?? throw new NotFoundException("Application not found");
+    }
+
+    private static void Touch(Application app)
+    {
+        app.Status = ApplicationStats.ComputeStatus(app);
+        app.LastUpdated = DateTime.UtcNow;
+    }
+
     public async Task<List<ApplicationDto>> GetApplicationsAsync(Guid seasonId, Guid userId)
     {
         var seasonExists = await db.Seasons.AnyAsync(s => s.Id == seasonId && s.UserId == userId);
@@ -32,11 +47,8 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
 
     public async Task<ApplicationDto> GetApplicationAsync(Guid id, Guid userId)
     {
-        var app = await db.Applications
-                      .Include(a => a.Stages)
-                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-                  ?? throw new NotFoundException("Application not found");
-        
+        var app = await GetOwnedApplicationAsync(id, userId);
+
         return ToDto(app);
     }
 
@@ -73,10 +85,7 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
 
     public async Task<ApplicationDto> UpdateApplicationAsync(Guid id, Guid userId, UpdateApplicationRequest request)
     {
-        var app = await db.Applications
-                      .Include(a => a.Stages)
-                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-                  ?? throw new NotFoundException("Application not found");
+        var app = await GetOwnedApplicationAsync(id, userId);
 
         if (request.Company != null) app.Company = request.Company;
         if (request.Role != null) app.Role = request.Role;
@@ -92,23 +101,17 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
 
     public async Task DeleteApplicationAsync(Guid id, Guid userId)
     {
-        var app = await db.Applications
-                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-                  ?? throw new NotFoundException("Application not found");
+        var app = await GetOwnedApplicationAsync(id, userId, includeStages: false);
         db.Applications.Remove(app);
         await db.SaveChangesAsync();
     }
 
     public async Task<ApplicationDto> OfferAsync(Guid id, Guid userId)
     {
-        var app = await db.Applications
-                      .Include(a => a.Stages)
-                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-                  ?? throw new NotFoundException("Application not found");
+        var app = await GetOwnedApplicationAsync(id, userId);
 
         app.OfferedAt = DateTime.UtcNow;
-        app.Status = ApplicationStats.ComputeStatus(app);
-        app.LastUpdated = DateTime.UtcNow;
+        Touch(app);
         await LogActivity(userId);
         await db.SaveChangesAsync();
         await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
@@ -118,14 +121,10 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
 
     public async Task<ApplicationDto> UnofferAsync(Guid id, Guid userId)
     {
-        var app = await db.Applications
-                      .Include(a => a.Stages)
-                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-                  ?? throw new NotFoundException("Application not found");
+        var app = await GetOwnedApplicationAsync(id, userId);
 
         app.OfferedAt = null;
-        app.Status = ApplicationStats.ComputeStatus(app);
-        app.LastUpdated = DateTime.UtcNow;
+        Touch(app);
         await db.SaveChangesAsync();
 
         return ToDto(app);
@@ -133,14 +132,10 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
 
     public async Task<ApplicationDto> WithdrawAsync(Guid id, Guid userId)
     {
-        var app = await db.Applications
-                      .Include(a => a.Stages)
-                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-                  ?? throw new NotFoundException("Application not found");
+        var app = await GetOwnedApplicationAsync(id, userId);
 
         app.WithdrawnAt = DateTime.UtcNow;
-        app.Status = ApplicationStats.ComputeStatus(app);
-        app.LastUpdated = DateTime.UtcNow;
+        Touch(app);
         await LogActivity(userId);
         await db.SaveChangesAsync();
         await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
@@ -150,14 +145,10 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
 
     public async Task<ApplicationDto> UnwithdrawAsync(Guid id, Guid userId)
     {
-        var app = await db.Applications
-                      .Include(a => a.Stages)
-                      .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
-                  ?? throw new NotFoundException("Application not found");
+        var app = await GetOwnedApplicationAsync(id, userId);
 
         app.WithdrawnAt = null;
-        app.Status = ApplicationStats.ComputeStatus(app);
-        app.LastUpdated = DateTime.UtcNow;
+        Touch(app);
         await db.SaveChangesAsync();
 
         return ToDto(app);
@@ -168,10 +159,7 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
         if (!Enum.TryParse<StageType>(request.Type, out var type))
             throw new BadRequestException("Invalid stage type");
 
-        var app = await db.Applications
-                      .Include(a => a.Stages)
-                      .FirstOrDefaultAsync(a => a.Id == appId && a.UserId == userId)
-                  ?? throw new NotFoundException("Application not found");
+        var app = await GetOwnedApplicationAsync(appId, userId);
 
         var stage = new ApplicationStage
         {
@@ -181,8 +169,7 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
             ScheduledDate = request.ScheduledDate
         };
         db.ApplicationStages.Add(stage);
-        app.Status = ApplicationStats.ComputeStatus(app);
-        app.LastUpdated = DateTime.UtcNow;
+        Touch(app);
         await LogActivity(userId);
         await db.SaveChangesAsync();
         await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
@@ -193,10 +180,7 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
     public async Task<ApplicationStageDto> UpdateStageAsync(Guid appId, Guid userId, Guid stageId,
         UpdateStageRequest request)
     {
-        var app = await db.Applications
-                      .Include(a => a.Stages)
-                      .FirstOrDefaultAsync(a => a.Id == appId && a.UserId == userId)
-                  ?? throw new NotFoundException("Application not found");
+        var app = await GetOwnedApplicationAsync(appId, userId);
 
         var stage = app.Stages.FirstOrDefault(s => s.Id == stageId)
                     ?? throw new NotFoundException("Stage not found");
@@ -208,8 +192,7 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
         if (request.ScheduledDate.HasValue) stage.ScheduledDate = request.ScheduledDate;
         if (request.CompletedDate.HasValue) stage.CompletedDate = request.CompletedDate;
         if (request.Notes != null) stage.Notes = request.Notes;
-        app.Status = ApplicationStats.ComputeStatus(app);
-        app.LastUpdated = DateTime.UtcNow;
+        Touch(app);
         await LogActivity(userId);
         await db.SaveChangesAsync();
         await milestoneService.CheckAndUnlockMilestones(userId, app.SeasonId);
@@ -219,18 +202,14 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
 
     public async Task DeleteStageAsync(Guid appId, Guid userId, Guid stageId)
     {
-        var app = await db.Applications
-                      .Include(a => a.Stages)
-                      .FirstOrDefaultAsync(a => a.Id == appId && a.UserId == userId)
-                  ?? throw new NotFoundException("Application not found");
+        var app = await GetOwnedApplicationAsync(appId, userId);
 
         var stage = app.Stages.FirstOrDefault(s => s.Id == stageId)
                     ?? throw new NotFoundException("Stage not found");
 
         db.ApplicationStages.Remove(stage);
         app.Stages.Remove(stage);
-        app.Status = ApplicationStats.ComputeStatus(app);
-        app.LastUpdated = DateTime.UtcNow;
+        Touch(app);
         await db.SaveChangesAsync();
     }
 
