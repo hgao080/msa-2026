@@ -4,7 +4,6 @@ public class Application
 {
     public Guid Id { get; set; }
     public Guid SeasonId { get; set; }
-    public Guid UserId { get; set; }
     public string Company { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public string? JobPostingUrl { get; set; }

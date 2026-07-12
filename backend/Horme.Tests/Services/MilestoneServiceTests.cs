@@ -24,10 +24,9 @@ public class MilestoneServiceTests
         return season;
     }
 
-    private static Application NewApp(Guid userId, Guid seasonId, ApplicationStatus status = ApplicationStatus.Applied, DateTime? appliedDate = null) => new()
+    private static Application NewApp(Guid seasonId, ApplicationStatus status = ApplicationStatus.Applied, DateTime? appliedDate = null) => new()
     {
         Id = Guid.NewGuid(),
-        UserId = userId,
         SeasonId = seasonId,
         Company = "Acme",
         Role = "Engineer",
@@ -48,7 +47,7 @@ public class MilestoneServiceTests
         using var db = CreateDb();
         var userId = Guid.NewGuid();
         var season = SeedSeason(db, userId);
-        db.Applications.Add(NewApp(userId, season.Id));
+        db.Applications.Add(NewApp(season.Id));
         await db.SaveChangesAsync();
 
         await new MilestoneService(db).CheckAndUnlockMilestones(userId, season.Id);
@@ -64,7 +63,7 @@ public class MilestoneServiceTests
         using var db = CreateDb();
         var userId = Guid.NewGuid();
         var season = SeedSeason(db, userId);
-        db.Applications.AddRange(Enumerable.Range(0, 10).Select(_ => NewApp(userId, season.Id)));
+        db.Applications.AddRange(Enumerable.Range(0, 10).Select(_ => NewApp(season.Id)));
         await db.SaveChangesAsync();
 
         await new MilestoneService(db).CheckAndUnlockMilestones(userId, season.Id);
@@ -79,7 +78,7 @@ public class MilestoneServiceTests
         using var db = CreateDb();
         var userId = Guid.NewGuid();
         var season = SeedSeason(db, userId);
-        db.Applications.Add(NewApp(userId, season.Id));
+        db.Applications.Add(NewApp(season.Id));
         await db.SaveChangesAsync();
         var service = new MilestoneService(db);
 
@@ -97,7 +96,7 @@ public class MilestoneServiceTests
         using var db = CreateDb();
         var userId = Guid.NewGuid();
         var season = SeedSeason(db, userId);
-        db.Applications.Add(NewApp(userId, season.Id, ApplicationStatus.Offer));
+        db.Applications.Add(NewApp(season.Id, ApplicationStatus.Offer));
         await db.SaveChangesAsync();
 
         await new MilestoneService(db).CheckAndUnlockMilestones(userId, season.Id);
@@ -129,8 +128,8 @@ public class MilestoneServiceTests
         var userId = Guid.NewGuid();
         var season = SeedSeason(db, userId, weeklyTarget: 2);
         db.Applications.AddRange(
-            NewApp(userId, season.Id, appliedDate: DateTime.UtcNow),
-            NewApp(userId, season.Id, appliedDate: DateTime.UtcNow));
+            NewApp(season.Id, appliedDate: DateTime.UtcNow),
+            NewApp(season.Id, appliedDate: DateTime.UtcNow));
         await db.SaveChangesAsync();
 
         await new MilestoneService(db).CheckAndUnlockMilestones(userId, season.Id);

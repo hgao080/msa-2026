@@ -68,7 +68,6 @@ public class DashboardServiceTests
         db.Applications.Add(new Application
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
             SeasonId = season.Id,
             Company = "Acme",
             Role = "Engineer",

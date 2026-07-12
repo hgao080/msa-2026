@@ -18,8 +18,8 @@ public static class DataSeeder
         {
             db.UserMilestones.RemoveRange(db.UserMilestones.Where(m => m.UserId == DemoUserId));
             db.DailyActivities.RemoveRange(db.DailyActivities.Where(d => d.UserId == DemoUserId));
-            db.ApplicationStages.RemoveRange(db.ApplicationStages.Where(s => s.Application.UserId == DemoUserId));
-            db.Applications.RemoveRange(db.Applications.Where(a => a.UserId == DemoUserId));
+            db.ApplicationStages.RemoveRange(db.ApplicationStages.Where(s => s.Application.Season.UserId == DemoUserId));
+            db.Applications.RemoveRange(db.Applications.Where(a => a.Season.UserId == DemoUserId));
             db.Seasons.RemoveRange(db.Seasons.Where(s => s.UserId == DemoUserId));
             db.Users.Remove(existing);
             await db.SaveChangesAsync();
@@ -107,7 +107,6 @@ public static class DataSeeder
             {
                 Id = Guid.NewGuid(),
                 SeasonId = SeasonId,
-                UserId = DemoUserId,
                 Company = company,
                 Role = role,
                 Source = sources[rng.Next(sources.Length)],

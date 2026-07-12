@@ -18,7 +18,7 @@ public class InsightService(AppDbContext db)
     {
         var apps = await db.Applications
             .Include(a => a.Stages)
-            .Where(a => a.SeasonId == seasonId && a.UserId == userId)
+            .Where(a => a.SeasonId == seasonId && a.Season.UserId == userId)
             .ToListAsync();
 
         var activities = await db.DailyActivities

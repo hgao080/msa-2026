@@ -22,7 +22,7 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
         var query = db.Applications.AsQueryable();
         if (includeStages) query = query.Include(a => a.Stages);
 
-        return await query.FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId)
+        return await query.FirstOrDefaultAsync(a => a.Id == id && a.Season.UserId == userId)
                ?? throw new NotFoundException("Application not found");
     }
 
@@ -39,7 +39,7 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
 
         var apps = await db.Applications
             .Include(a => a.Stages)
-            .Where(a => a.SeasonId == seasonId && a.UserId == userId)
+            .Where(a => a.SeasonId == seasonId)
             .ToListAsync();
 
         return apps.Select(ToDto).ToList();
@@ -65,7 +65,6 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
         {
             Id = Guid.NewGuid(),
             SeasonId = seasonId,
-            UserId = userId,
             Company = request.Company,
             Role = request.Role,
             JobPostingUrl = request.JobPostingUrl,

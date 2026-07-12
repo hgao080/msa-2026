@@ -34,7 +34,7 @@ public class DashboardService(AppDbContext db)
 
         var apps = await db.Applications
             .Include(a => a.Stages)
-            .Where(a => a.SeasonId == seasonId && a.UserId == userId)
+            .Where(a => a.SeasonId == seasonId)
             .ToListAsync();
 
         var today = DateTime.UtcNow;

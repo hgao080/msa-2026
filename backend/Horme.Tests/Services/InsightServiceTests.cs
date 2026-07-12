@@ -22,10 +22,9 @@ public class InsightServiceTests
         return season;
     }
 
-    private static Application NewApp(Guid userId, Guid seasonId, ApplicationStatus status, DateTime appliedDate, ApplicationSource source = ApplicationSource.LinkedIn) => new()
+    private static Application NewApp(Guid seasonId, ApplicationStatus status, DateTime appliedDate, ApplicationSource source = ApplicationSource.LinkedIn) => new()
     {
         Id = Guid.NewGuid(),
-        UserId = userId,
         SeasonId = seasonId,
         Company = "Acme",
         Role = "Engineer",
@@ -85,12 +84,12 @@ public class InsightServiceTests
         var season = SeedSeason(db, userId);
         var now = DateTime.UtcNow;
         db.Applications.AddRange(
-            NewApp(userId, season.Id, ApplicationStatus.Technical, now, ApplicationSource.Referral),
-            NewApp(userId, season.Id, ApplicationStatus.PhoneScreen, now, ApplicationSource.Referral),
-            NewApp(userId, season.Id, ApplicationStatus.Offer, now, ApplicationSource.Referral),
-            NewApp(userId, season.Id, ApplicationStatus.Applied, now, ApplicationSource.Seek),
-            NewApp(userId, season.Id, ApplicationStatus.Applied, now, ApplicationSource.Seek),
-            NewApp(userId, season.Id, ApplicationStatus.Applied, now, ApplicationSource.Seek));
+            NewApp(season.Id, ApplicationStatus.Technical, now, ApplicationSource.Referral),
+            NewApp(season.Id, ApplicationStatus.PhoneScreen, now, ApplicationSource.Referral),
+            NewApp(season.Id, ApplicationStatus.Offer, now, ApplicationSource.Referral),
+            NewApp(season.Id, ApplicationStatus.Applied, now, ApplicationSource.Seek),
+            NewApp(season.Id, ApplicationStatus.Applied, now, ApplicationSource.Seek),
+            NewApp(season.Id, ApplicationStatus.Applied, now, ApplicationSource.Seek));
         await db.SaveChangesAsync();
 
         var insights = await new InsightService(db).GetInsightsAsync(userId, season.Id);
@@ -105,9 +104,9 @@ public class InsightServiceTests
         var userId = Guid.NewGuid();
         var season = SeedSeason(db, userId);
         var now = DateTime.UtcNow;
-        var app1 = NewApp(userId, season.Id, ApplicationStatus.Rejected, now);
+        var app1 = NewApp(season.Id, ApplicationStatus.Rejected, now);
         app1.Stages.Add(new ApplicationStage { Id = Guid.NewGuid(), ApplicationId = app1.Id, Type = StageType.Technical, Status = StageStatus.Failed });
-        var app2 = NewApp(userId, season.Id, ApplicationStatus.Rejected, now);
+        var app2 = NewApp(season.Id, ApplicationStatus.Rejected, now);
         app2.Stages.Add(new ApplicationStage { Id = Guid.NewGuid(), ApplicationId = app2.Id, Type = StageType.Technical, Status = StageStatus.Failed });
         db.Applications.AddRange(app1, app2);
         await db.SaveChangesAsync();
@@ -123,7 +122,7 @@ public class InsightServiceTests
         using var db = CreateDb();
         var userId = Guid.NewGuid();
         var season = SeedSeason(db, userId);
-        db.Applications.Add(NewApp(userId, season.Id, ApplicationStatus.Applied, DateTime.UtcNow.AddDays(-20)));
+        db.Applications.Add(NewApp(season.Id, ApplicationStatus.Applied, DateTime.UtcNow.AddDays(-20)));
         await db.SaveChangesAsync();
 
         var insights = await new InsightService(db).GetInsightsAsync(userId, season.Id);
@@ -139,7 +138,7 @@ public class InsightServiceTests
         var season = SeedSeason(db, userId);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         db.DailyActivities.AddRange(Enumerable.Range(1, 4).Select(d => new DailyActivity { UserId = userId, Date = today.AddDays(-d) }));
-        db.Applications.Add(NewApp(userId, season.Id, ApplicationStatus.Applied, DateTime.UtcNow.AddDays(-20)));
+        db.Applications.Add(NewApp(season.Id, ApplicationStatus.Applied, DateTime.UtcNow.AddDays(-20)));
         await db.SaveChangesAsync();
 
         var insights = await new InsightService(db).GetInsightsAsync(userId, season.Id);
