@@ -6,10 +6,10 @@ namespace Horme.API.Data;
 
 public static class DataSeeder
 {
-    public static readonly Guid DemoUserId = Guid.Parse("22222222-2222-2222-2222-222222222001");
+    private static readonly Guid DemoUserId = Guid.Parse("22222222-2222-2222-2222-222222222001");
     private static readonly Guid SeasonId = Guid.Parse("22222222-2222-2222-2222-222222222002");
-    public const string DemoEmail = "demo@horme.dev";
-    public const string DemoPassword = "demo1234";
+    private const string DemoEmail = "demo@horme.dev";
+    private const string DemoPassword = "demo1234";
 
     public static async Task SeedDemoUserAsync(AppDbContext db)
     {
