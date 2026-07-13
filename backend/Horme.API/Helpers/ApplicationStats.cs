@@ -5,7 +5,7 @@ namespace Horme.API.Helpers;
 public static class ApplicationStats
 {
     public static DateTime StartOfWeek(DateTime reference) =>
-        reference.Date.AddDays(-(int)reference.DayOfWeek);
+        reference.Date.AddDays(-(((int)reference.DayOfWeek + 6) % 7));
 
     public static ApplicationStatus ComputeStatus(Application app)
     {
