@@ -506,6 +506,22 @@ Required by MSA 2026 Phase 2 assessment.
 - Asked the user before removing the three dead-but-flagged items rather than deleting silently, since they touch the public API surface (an endpoint, a DTO field) rather than being purely internal — user chose to remove all three.
 - Left `GetOwnedApplicationAsync`'s `includeStages` as an opt-out parameter (default `true`) rather than always including, to preserve `DeleteApplicationAsync`'s existing no-include behavior instead of silently adding an unnecessary join.
 
+## Session 22 — 2026-07-14 — DTO-level length validation (GitHub issue #18)
+
+**Prompts:**
+- "Could you address github issue #18"
+
+**Generated / decided:**
+- Issue #18: `AddStringMaxLengths` migration (Session 21) added DB-level `HasMaxLength` constraints, but request DTOs had no matching validation — an over-limit field failed as an unhandled `DbUpdateException` → generic 500 instead of a clean `400`.
+- Added `Horme.API/Helpers/Validation.cs` with a single static `EnsureMaxLength(string? value, int maxLength, string fieldName)` that throws `BadRequestException`, matching the existing `{ error: message }` response shape from `ExceptionMiddleware`.
+- Wired it into the relevant service methods, mirroring each field's `AppDbContext` `HasMaxLength`: `AuthService.RegisterAsync` (Email 255, Username 50), `ApplicationService.CreateApplicationAsync`/`UpdateApplicationAsync` (Company/Role 200, JobPostingUrl 2048, ReferrerName 100, Notes 2000), `ApplicationService.UpdateStageAsync` (Notes 2000), `SeasonService.CreateSeasonAsync`/`UpdateSeasonAsync` (Name 100, Goal 500), `SeasonService.CloseSeasonAsync` (Outcome 200).
+- Added one `ThrowsAsync<BadRequestException>` test per touched service (`AuthServiceTests`, `ApplicationServiceTests`, `SeasonServiceTests`) using the codebase's existing `new string('a', N)` overflow pattern.
+- Verified: `dotnet build` clean, `dotnet test` 68/68 passing (up from 63).
+
+**Key design choices:**
+- Chose explicit `Validation.EnsureMaxLength` calls in services over `[MaxLength]` DataAnnotations on the DTOs. `[ApiController]`'s automatic model-state validation returns an RFC7807 `ValidationProblemDetails` body, which is a different shape than every other error response in this API (`{ error: message }` via `ExceptionMiddleware`/`BadRequestException`). Explicit service-level checks keep the error contract consistent and match the existing pattern (`AuthService`, `ApplicationService`, `SeasonService` already throw `BadRequestException` for other validation failures like invalid enum values).
+- Left `RegisterRequest.Password` unvalidated — `User.PasswordHash` (bcrypt output, 60 chars) is a DB constraint on the hash, not the raw password, so it isn't a matching-length case per the issue's scope.
+
 Each Claude Code session, append a new `## Session N` block with:
 - Date
 - Each distinct prompt (copy or summarise — exact wording preferred)

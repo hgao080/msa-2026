@@ -70,6 +70,31 @@ public class ApplicationServiceTests
     }
 
     [Fact]
+    public async Task CreateApplicationAsync_CompanyTooLong_ThrowsBadRequest()
+    {
+        using var db = CreateDb();
+        var (userId, seasonId) = await SeedSeason(db);
+        var service = CreateService(db);
+        var request = ValidRequest(new string('a', 201));
+
+        await Assert.ThrowsAsync<BadRequestException>(() =>
+            service.CreateApplicationAsync(seasonId, userId, request));
+    }
+
+    [Fact]
+    public async Task UpdateApplicationAsync_NotesTooLong_ThrowsBadRequest()
+    {
+        using var db = CreateDb();
+        var (userId, seasonId) = await SeedSeason(db);
+        var service = CreateService(db);
+        var app = await service.CreateApplicationAsync(seasonId, userId, ValidRequest());
+        var request = new UpdateApplicationRequest(null, null, null, null, new string('a', 2001));
+
+        await Assert.ThrowsAsync<BadRequestException>(() =>
+            service.UpdateApplicationAsync(app.Id, userId, request));
+    }
+
+    [Fact]
     public async Task GetApplicationAsync_OtherUsersApplication_ThrowsNotFound()
     {
         using var db = CreateDb();

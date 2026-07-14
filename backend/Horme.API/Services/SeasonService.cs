@@ -30,6 +30,9 @@ public class SeasonService(AppDbContext db)
 
     public async Task<SeasonDto> CreateSeasonAsync(CreateSeasonRequest request, Guid userId)
     {
+        Validation.EnsureMaxLength(request.Name, 100, "Name");
+        Validation.EnsureMaxLength(request.Goal, 500, "Goal");
+
         var season = new Season
         {
             Id = Guid.NewGuid(),
@@ -51,6 +54,9 @@ public class SeasonService(AppDbContext db)
             .FirstOrDefaultAsync(s => s.Id == seasonId && s.UserId == userId)
             ?? throw new NotFoundException("Season not found");
 
+        Validation.EnsureMaxLength(request.Name, 100, "Name");
+        Validation.EnsureMaxLength(request.Goal, 500, "Goal");
+
         if (request.Name != null) season.Name = request.Name;
         if (request.Goal != null) season.Goal = request.Goal;
         if (request.WeeklyTarget.HasValue) season.WeeklyTarget = request.WeeklyTarget.Value;
@@ -68,6 +74,8 @@ public class SeasonService(AppDbContext db)
 
         if (season.Status == SeasonStatus.Archived)
             throw new BadRequestException("Season is already archived");
+
+        Validation.EnsureMaxLength(outcome, 200, "Outcome");
 
         var apps = season.Applications.ToList();
         var activities = await db.DailyActivities

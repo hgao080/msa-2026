@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Horme.API.Data;
 using Horme.API.DTOs;
 using Horme.API.Exceptions;
+using Horme.API.Helpers;
 using Horme.API.Models;
 
 namespace Horme.API.Services;
@@ -14,6 +15,9 @@ public class AuthService(AppDbContext db, IConfiguration config)
 {
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
+        Validation.EnsureMaxLength(request.Email, 255, "Email");
+        Validation.EnsureMaxLength(request.Username, 50, "Username");
+
         if (await db.Users.AnyAsync(u => u.Email == request.Email))
             throw new BadRequestException("Email already registered");
 

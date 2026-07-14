@@ -61,6 +61,12 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
         if (!Enum.TryParse<ApplicationSource>(request.Source, out var source))
             throw new BadRequestException("Invalid source value");
 
+        Validation.EnsureMaxLength(request.Company, 200, "Company");
+        Validation.EnsureMaxLength(request.Role, 200, "Role");
+        Validation.EnsureMaxLength(request.JobPostingUrl, 2048, "JobPostingUrl");
+        Validation.EnsureMaxLength(request.ReferrerName, 100, "ReferrerName");
+        Validation.EnsureMaxLength(request.Notes, 2000, "Notes");
+
         var app = new Application
         {
             Id = Guid.NewGuid(),
@@ -85,6 +91,11 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
     public async Task<ApplicationDto> UpdateApplicationAsync(Guid id, Guid userId, UpdateApplicationRequest request)
     {
         var app = await GetOwnedApplicationAsync(id, userId);
+
+        Validation.EnsureMaxLength(request.Company, 200, "Company");
+        Validation.EnsureMaxLength(request.Role, 200, "Role");
+        Validation.EnsureMaxLength(request.JobPostingUrl, 2048, "JobPostingUrl");
+        Validation.EnsureMaxLength(request.Notes, 2000, "Notes");
 
         if (request.Company != null) app.Company = request.Company;
         if (request.Role != null) app.Role = request.Role;
@@ -183,6 +194,8 @@ public class ApplicationService(AppDbContext db, MilestoneService milestoneServi
 
         var stage = app.Stages.FirstOrDefault(s => s.Id == stageId)
                     ?? throw new NotFoundException("Stage not found");
+
+        Validation.EnsureMaxLength(request.Notes, 2000, "Notes");
 
         if (request.Type != null && Enum.TryParse<StageType>(request.Type, out var ty))
             stage.Type = ty;

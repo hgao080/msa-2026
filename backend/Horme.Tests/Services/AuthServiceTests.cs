@@ -49,6 +49,15 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task Register_UsernameTooLong_ThrowsBadRequest()
+    {
+        using var db = CreateDb();
+        var service = new AuthService(db, CreateConfig());
+        await Assert.ThrowsAsync<BadRequestException>(() =>
+            service.RegisterAsync(new RegisterRequest("long@example.com", new string('a', 51), "password123")));
+    }
+
+    [Fact]
     public async Task Login_ValidCredentials_ReturnsToken()
     {
         using var db = CreateDb();

@@ -113,6 +113,28 @@ public class SeasonServiceTests
     }
 
     [Fact]
+    public async Task CreateSeasonAsync_NameTooLong_ThrowsBadRequest()
+    {
+        using var db = CreateDb();
+        var service = new SeasonService(db);
+
+        await Assert.ThrowsAsync<BadRequestException>(() =>
+            service.CreateSeasonAsync(new CreateSeasonRequest(new string('a', 101), null, 5), Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task CloseSeasonAsync_OutcomeTooLong_ThrowsBadRequest()
+    {
+        using var db = CreateDb();
+        var userId = Guid.NewGuid();
+        var service = new SeasonService(db);
+        var season = await service.CreateSeasonAsync(new CreateSeasonRequest("Season", null, 5), userId);
+
+        await Assert.ThrowsAsync<BadRequestException>(() =>
+            service.CloseSeasonAsync(season.Id, userId, new string('a', 201)));
+    }
+
+    [Fact]
     public async Task CloseSeasonAsync_OtherUsersSeason_ThrowsNotFound()
     {
         using var db = CreateDb();
